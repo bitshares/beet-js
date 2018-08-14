@@ -5,19 +5,7 @@ btscompanion.connect('My App').then(connected => {
         //this.btscompanion = btscompanion; Unbind from window and bind to your own state var to avoid extension hijacking
         //window.btscompanion = null; 
         console.log(window.btscompanion.identity);
-        window.btscompanion.requestSignature({op_type: "transfer",op_data: {
-  "amount": {
-    "amount": 100000,
-    "asset_id": "1.3.0"
-  },
-  "extensions": [],
-  "fee": {
-    "amount": 10420,
-    "asset_id": "1.3.0"
-  },
-  "from": window.btscompanion.identity.id,
-  "to": "1.2.386826"
-}});
+        window.btscompanion.voteFor({id: "1.14.114"});
 
     }
 })

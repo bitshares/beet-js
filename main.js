@@ -60,7 +60,7 @@ class BTSCompanion {
             // Tries to set up Desktop Connection
             CompanionClient.init(pluginName, options.linkTimeout);
             CompanionClient.link().then(async authenticated => {
-                if(!authenticated) return false;
+                if(!authenticated) return false;                
                 this.identity = await this.getAccount();
                 return resolve(true);
             });
@@ -94,7 +94,15 @@ class BTSCompanion {
         //throwNoAuth();
         return CompanionClient.sendApiRequest({
             type:'requestSignature',
-            payload
+            payload:payload
+        });
+    }
+    
+    voteFor(payload){
+        //throwNoAuth();
+        return CompanionClient.sendApiRequest({
+            type:'voteFor',
+            payload:payload
         });
     }
 

@@ -6902,7 +6902,7 @@ var BTSCompanion = (function () {
 	            // Tries to set up Desktop Connection
 	            CompanionClient.init(pluginName, options.linkTimeout);
 	            CompanionClient.link().then(async authenticated => {
-	                if(!authenticated) return false;
+	                if(!authenticated) return false;                
 	                this.identity = await this.getAccount();
 	                return resolve(true);
 	            });
@@ -6936,7 +6936,15 @@ var BTSCompanion = (function () {
 	        //throwNoAuth();
 	        return CompanionClient.sendApiRequest({
 	            type:'requestSignature',
-	            payload
+	            payload:payload
+	        });
+	    }
+	    
+	    voteFor(payload){
+	        //throwNoAuth();
+	        return CompanionClient.sendApiRequest({
+	            type:'voteFor',
+	            payload:payload
 	        });
 	    }
 
