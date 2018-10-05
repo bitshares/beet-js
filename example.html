@@ -1,12 +1,6 @@
-<script src="bitshares-companion.js"></script>
+<script src="dist/main.js"></script>
 <script>
-btscompanion.connect('My App').then(connected => {
-    if(connected){
-        //this.btscompanion = btscompanion; Unbind from window and bind to your own state var to avoid extension hijacking
-        //window.btscompanion = null; 
-        console.log(window.btscompanion.identity);
-        window.btscompanion.voteFor({id: "1.14.114"});
-
-    }
+beet.init('My App').then(identities => {
+    console.log(identities);
 })
 </script>

@@ -1,4 +1,4 @@
-var BTSCompanion = (function () {
+var Beet = (function () {
 	'use strict';
 
 	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -6284,13 +6284,13 @@ var BTSCompanion = (function () {
 
 		clearTimeout(reconnectionTimeout);
 		reconnectionTimeout = setTimeout(() => {
-			CompanionClient.link();
+			BeetClient.link();
 		}, 1000);
 	};
 
 
 
-	class CompanionClient {
+	class BeetClient {
 
 	    static init(_plugin, timeout = 60000){
 	        plugin = _plugin;
@@ -6312,7 +6312,7 @@ var BTSCompanion = (function () {
 	                reconnectOnAbnormalDisconnection();
 	            }, this.timeout)),
 	            new Promise(async (resolve, reject) => {
-	                socket$2 = lib$1.connect(`${host}/btscompanion`, { secure:true, reconnection: false, rejectUnauthorized : false });
+	                socket$2 = lib$1.connect(`${host}/Beet`, { secure:true, reconnection: false, rejectUnauthorized : false });
 
 	                socket$2.on('connected', async () => {
 	                    clearTimeout(reconnectionTimeout);
@@ -6858,7 +6858,7 @@ var BTSCompanion = (function () {
 
 	var fetchNpmBrowserify = self.fetch.bind(self);
 
-	class BTSCompanion {
+	class Beet {
 
 	    constructor(){
 
@@ -6873,7 +6873,7 @@ var BTSCompanion = (function () {
 	            }, 3000);
 
 	            Promise.race([
-	                CompanionClient.ping().then(found => {
+	                BeetClient.ping().then(found => {
 	                    console.log('found', found);
 	                    if(found) resolve(true);
 	                })
@@ -6900,8 +6900,8 @@ var BTSCompanion = (function () {
 
 
 	            // Tries to set up Desktop Connection
-	            CompanionClient.init(pluginName, options.linkTimeout);
-	            CompanionClient.link().then(async authenticated => {
+	            BeetClient.init(pluginName, options.linkTimeout);
+	            BeetClient.link().then(async authenticated => {
 	                if(!authenticated) return false;                
 	                this.identity = await this.getAccount();
 	                return resolve(true);
@@ -6910,17 +6910,17 @@ var BTSCompanion = (function () {
 	    }
 
 	    disconnect(){
-	        return CompanionClient.disconnect();
+	        return BeetClient.disconnect();
 	    }
 
 	    isConnected(){
-	        return CompanionClient.isConnected();
+	        return BeetClient.isConnected();
 	    }
 
 
 	    getAccount(){
 	        //throwNoAuth();
-	        return CompanionClient.sendApiRequest({
+	        return BeetClient.sendApiRequest({
 	            type:'getAccount',
 	            payload:{
 	        //        fields:requiredFields
@@ -6934,7 +6934,7 @@ var BTSCompanion = (function () {
 
 	    requestSignature(payload){
 	        //throwNoAuth();
-	        return CompanionClient.sendApiRequest({
+	        return BeetClient.sendApiRequest({
 	            type:'requestSignature',
 	            payload:payload
 	        });
@@ -6942,7 +6942,7 @@ var BTSCompanion = (function () {
 	    
 	    voteFor(payload){
 	        //throwNoAuth();
-	        return CompanionClient.sendApiRequest({
+	        return BeetClient.sendApiRequest({
 	            type:'voteFor',
 	            payload:payload
 	        });
@@ -6952,14 +6952,14 @@ var BTSCompanion = (function () {
 
 
 	class Holder {
-	    constructor(_companion){
-	        this.btscompanion = _companion;
+	    constructor(_Beet){
+	        this.Beet = _Beet;
 	    }
 	}
 
 
-	let holder = new Holder(new BTSCompanion());
-	if(typeof window !== 'undefined') window.btscompanion = holder.btscompanion;
+	let holder = new Holder(new Beet());
+	if(typeof window !== 'undefined') window.Beet = holder.Beet;
 
 	return holder;
 
