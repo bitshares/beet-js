@@ -1,4 +1,3 @@
-//import BeetClient from './lib/BeetClient';
 const OTPAuth = require('otpauth');
 import CryptoJS from "crypto-js";
 import browser from 'browser-detect';
