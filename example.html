@@ -2,5 +2,18 @@
 <script>
 beet.init('My App').then(identities => {
     console.log(identities);
+    if (identities.length==0) {
+        beet.connect().then(res=> {
+            beet.link('BTS').then( res=> {
+                console.log(beet.getAccount());
+            });
+        })
+    }else{
+        beet.connect(identities[0]).then(res=> {
+            
+                console.log(beet.getAccount());
+            
+        })
+    }
 })
 </script>

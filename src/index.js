@@ -6,28 +6,19 @@ import eccrypto from 'eccrypto';
 import BeetClientDB from './lib/BeetClientDB';
 import "isomorphic-fetch";
 
-
-
-
-
-
-
-
-
 class Beet {
 
     constructor() {
         this.host = 'wss://local.get-beet.io:60556';
-        this.connected = false;
-        this.authenticated = false;
-        this.linked = false;
-        this.initialised = false;
-        this.socket = null;
-        this.appName = null;
-        this.otp = null;
-        this.openRequests = [];
-        this.origin = null;
-        this.socket = null;
+        this.connected = false; // State of WS Connection to Beet
+        this.authenticated = false; // Whether this app has identified itself to Beet 
+        this.linked = false; // Whether this app has linked itself to a Beet account/id
+        this.initialised = false; // Whether this client has been initialised (app name & domain/origin set)
+        this.socket = null; // Holds the ws connection
+        this.appName = null; // Name/identifier of the app making use of this client
+        this.otp = null;  // Holds the one-time-password generation for the linked account
+        this.openRequests = []; // Holds pending API request promises to be resolved upon beet response
+        this.origin = null; // Holds domain-name/origin of this instance
     }
     reset() {
         this.connected = false;
@@ -38,7 +29,9 @@ class Beet {
         this.openRequests = [];        
         this.socket = null;
     }
-    async init(app) {
+
+    // e.g. Assumign beet-js is deployed on www.mydomain.com. Running init('My Cool App') will set app name to My Cool App and origin to www.mydomain.com and return all cached linked accoutns for that app
+    async init(app) { 
         if (this.initialised === false) {
             this.appName = app;
             this.origin = app;
@@ -55,7 +48,8 @@ class Beet {
         this.initialised = true;
         return appstore;
     }
-    ping() {
+    // ping() checks version of Beet app
+    ping() { 
         let ping;
         return new Promise(async (resolve, reject) => {
             try {
@@ -77,20 +71,23 @@ class Beet {
             }
         });
     }
-    isInstalled() {
+    // returns false if Beet is not installed or not running and Beet version if found
+    isInstalled() { 
         return new Promise(resolve => {
             setTimeout(() => {
                 resolve(false);
-            }, 3000);
+            }, 500);
             this.ping().then(found => {
                 if (found) resolve(found);
             });
 
         })
     }
-    async get_id() {
+    // Generates a random id for an API request
+    async generate_id() {
         return Math.round(Math.random() * 100000000 + 1);
     }
+    // Used to get the available id for a request and replace it with a new one while also returning its hash
     async fetch_ids() {
         
         let app = await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).first();        
@@ -102,9 +99,10 @@ class Beet {
             next_hash: next_hash.toString()
         };
     }
+    //  Generates a new id and stores it as the next one to be used
     async next_id() {
         if (this.connected && this.authenticated && this.linked) {
-            let next_id = Math.round(Math.random() * 100000000 + 1);
+            let next_id = generate_id();
             await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).modify({
                 next_id: next_id
             });
@@ -113,6 +111,7 @@ class Beet {
             throw new Error("You must be connected, authorised and linked.");
         }
     }
+    // Requests to link to a Beet account/id on specified chain
     async link(chain = 'BTS') {
         return new Promise(async (resolve, reject) => {
             if (!this.connected) throw new Error("You must connect to Beet first.");
@@ -124,10 +123,10 @@ class Beet {
             let pubkey = await eccrypto.getPublic(this.privk).toString('hex');
             this.secret = await eccrypto.derive(this.privk, Buffer.from(this.beetkey, 'hex'));
             var next_id = Math.round(Math.random() * 100000000 + 1);
-            this.chain = "BTS";
+            this.chain = chain;
             var next_hash = await CryptoJS.SHA256('' + next_id);
             let linkobj = {
-                chain: "BTS",
+                chain: this.chain,
                 pubkey: pubkey,
                 next_hash: next_hash.toString()
             }
@@ -162,6 +161,7 @@ class Beet {
         });
 
     }
+    // Connects to Beet instance. if one of the existing linked identities (returned by init()) is passed it also tries to enable that link
     async connect(identity = null, options) {
         return new Promise(resolve => {
             if (!this.initialised) throw new Error("You must initialise the Beet Client first via init(appName).");
@@ -250,6 +250,7 @@ class Beet {
 
         })
     }
+    // sends a request to Beet. if it is an API request, it is encrypted with AES using a one-time-pass generated by the request id (as a counter) and a previously established shared secret with Beet (using ECDH)
     async sendRequest(type, payload) {
         return new Promise(async (resolve, reject) => {
             let request = {}
@@ -274,6 +275,7 @@ class Beet {
             console.log('sent');
         });
     }
+    // Disconnects from Beet
     disconnect() {
         this.socket.close();
         this.reset();
@@ -282,16 +284,20 @@ class Beet {
     isConnected() {
         return this.connected;
     }
+    /* API Requests :
 
+       The following should be split into chain-specific modules as multi-chain support is finalised
+       These are currently BTS only.
 
+    */
+    // Gets the currently linked account
     getAccount() {        
         return this.sendRequest('api', {
             method: 'getAccount',
             params: {}
         });
     }
-
-
+    // Requests a signature for an arbitrary transaction
     requestSignature(payload) {
         
         return this.sendRequest('api', {
@@ -299,7 +305,7 @@ class Beet {
             params: payload
         });
     }
-
+    // Requests a vote for specified votable object 
     voteFor(payload) {
         
         return this.sendRequest('api', {
