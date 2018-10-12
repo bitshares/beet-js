@@ -1,21 +1,25 @@
 {
-  "name": "bitshares-companion-js",
-  "version": "1.0.0",
-  "description": "",
+  "name": "beet-js",
+  "version": "0.5.0",
+  "description": "Beet-js is the client lib for Beet, a stand-alone key-manager and signing app for BitShares.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "clockworkgr",
+  "license": "MIT",
   "devDependencies": {
     "es6-promise": "^4.2.4",
     "isomorphic-fetch": "^2.2.1",
-    "rollup": "^0.64.1",
-    "rollup-plugin-commonjs": "^9.1.5",
-    "rollup-plugin-node-resolve": "^3.3.0",
-    "socket.io-client": "^2.1.1"
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "browser-detect": "^0.2.28",
+    "crypto-js": "^3.1.9-1",
+    "dexie": "^2.0.4",
+    "eccrypto": "^1.0.3",
+    "otpauth": "^3.2.1"
+  }
 }
