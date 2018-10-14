@@ -106,7 +106,7 @@ class Beet {
      *
      * @returns {number} A random id
      */
-    async generate_id() {
+    generate_id() {
         return Math.round(Math.random() * 100000000 + 1);
     }
     // Used to get the available id for a request and replace it with a new one while also returning its hash
@@ -129,11 +129,12 @@ class Beet {
      */
     async next_id() {
         if (this.connected && this.authenticated && this.linked) {
-            let next_id = this.generate_id();
+            let new_id = this.generate_id();
+            
             await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).modify({
-                next_id: next_id
+                next_id: new_id
             });
-            return next_id;
+            return new_id;
         } else {
             throw new Error("You must be connected, authorised and linked.");
         }
@@ -311,7 +312,7 @@ class Beet {
                 let key = this.otp.generate();
                 request.payload = CryptoJS.AES.encrypt(JSON.stringify(payload), key).toString();
             } else {
-                request.id = await this.get_id();
+                request.id = await this.generate_id();
                 request.payload = payload;
             }
             this.openRequests.push(Object.assign(request, {
