@@ -4,6 +4,7 @@
   "description": "Beet-js is the client lib for Beet, a stand-alone key-manager and signing app for BitShares.",
   "main": "index.js",
   "scripts": {
+    "webpack": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
