@@ -1,10 +1,10 @@
 const OTPAuth = require('otpauth');
 import CryptoJS from "crypto-js";
 import browser from 'browser-detect';
-import crypto from 'crypto';
-import eccrypto from 'eccrypto';
 import BeetClientDB from './lib/BeetClientDB';
 import "isomorphic-fetch";
+import { ec as EC } from "elliptic"; 
+var ec = new EC('curve25519');
 
 class Beet {
 
@@ -153,9 +153,10 @@ class Beet {
             setTimeout(() => {
                 resolve(false);
             }, this.options.linkTimeout);
-            this.privk = crypto.randomBytes(32);
-            let pubkey = await eccrypto.getPublic(this.privk).toString('hex');
-            this.secret = await eccrypto.derive(this.privk, Buffer.from(this.beetkey, 'hex'));
+            let keypair= ec.genKeyPair();
+            this.privk = keypair.getPrivate();
+            let pubkey = keypair.getPublic().encode('hex');            
+            this.secret =keypair.derive(ec.keyFromPublic(this.beetkey, 'hex').getPublic());            
             var next_id = Math.round(Math.random() * 100000000 + 1);
             this.chain = chain;
             var next_hash = await CryptoJS.SHA256('' + next_id);
