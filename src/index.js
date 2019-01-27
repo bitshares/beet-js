@@ -240,7 +240,7 @@ class Beet {
                 this.connected = true;
                 var auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
-                    console.log(res);
+                    console.log("connect", res);
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
                     if (this.linked) {
@@ -255,6 +255,7 @@ class Beet {
                     } else {
                         this.beetkey = res.pub_key;
                     }
+                    console.log(this.identity.secret);
                     resolve(res);
 
                 }).catch(rej => {
@@ -267,13 +268,17 @@ class Beet {
                 this.socket = null;
             }
             this.socket.onmessage = async (evt) => {
-                console.log('received');
+                console.log("socket.onmessage", evt);
                 let msg = JSON.parse(evt.data);
-                const openRequest = this.openRequests.find(x => x.id === msg.id);
+                const openRequest = this.openRequests.find(
+                    (x) => {
+                        return x.id === msg.id ||x.id.toString() === msg.id
+                    }
+                );
                 if (!openRequest) return;
                 if (msg.error) {
                     openRequest.reject(msg.payload.message);
-                    if(msg.payload.code==2) {
+                    if(msg.payload.code == 2) {
                         await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).delete();
                         this.reset();
                     }
@@ -282,7 +287,7 @@ class Beet {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
                         var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
-                        console.log(response);
+                        console.log("socket.onmessage payload", response);
                         openRequest.resolve(response);
                     } else {
                         openRequest.resolve(msg.payload);
@@ -301,16 +306,17 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     async sendRequest(type, payload) {
+        console.log("sendRequest", type, payload);
         return new Promise(async (resolve, reject) => {
             let request = {}
             request.type = type;
             if (type == 'api') {
                 let ids = await this.fetch_ids();
-                console.log(ids);
                 payload.next_hash = ids.next_hash;
                 request.id = ids.id;
                 this.otp.counter = request.id;
                 let key = this.otp.generate();
+                console.log("sendRequest payload", payload);
                 request.payload = CryptoJS.AES.encrypt(JSON.stringify(payload), key).toString();
             } else {
                 request.id = await this.generate_id();
@@ -321,7 +327,7 @@ class Beet {
                 reject
             }));
             this.socket.send(JSON.stringify(request));
-            console.log('sent');
+            console.log('sendRequest dispatched', request);
         });
     }
 
