@@ -189,6 +189,7 @@ class Beet {
                     counter: 0,
                     secret: OTPAuth.Secret.fromHex(this.identity.secret)
                 });
+                console.log("otp instantiated", this.identity.secret.toString());
                 resolve(res);
             }).catch(rej => {
                 reject(rej);
@@ -252,6 +253,7 @@ class Beet {
                             counter: 0,
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
+                        console.log("otp instantiated", this.identity.secret.toString());
                     } else {
                         this.beetkey = res.pub_key;
                     }
@@ -287,6 +289,7 @@ class Beet {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
                         var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
+                        console.log("otp key generated", this.otp.counter);
                         console.log("socket.onmessage payload", response);
                         openRequest.resolve(response);
                     } else {
@@ -316,6 +319,7 @@ class Beet {
                 request.id = ids.id;
                 this.otp.counter = request.id;
                 let key = this.otp.generate();
+                console.log("otp key generated", this.otp.counter);
                 console.log("sendRequest payload", payload);
                 request.payload = CryptoJS.AES.encrypt(JSON.stringify(payload), key).toString();
             } else {
