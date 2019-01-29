@@ -279,7 +279,16 @@ class Beet {
                 );
                 if (!openRequest) return;
                 if (msg.error) {
-                    openRequest.reject(msg.payload.message);
+                    if (msg.encrypted) {
+                        this.otp.counter = msg.id;
+                        let key = this.otp.generate();
+                        var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
+                        console.log("otp key generated", this.otp.counter);
+                        console.log("socket.onmessage payload", response);
+                        openRequest.reject(response);
+                    } else {
+                        openRequest.reject(msg.payload.message);
+                    }
                     if(msg.payload.code == 2) {
                         await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).delete();
                         this.reset();
