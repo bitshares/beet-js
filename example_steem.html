@@ -24,20 +24,44 @@ beet.init('beet-js example for steem').then(identities => {
         } else {
             beet.connect(identities[0]).then(res => {
                 console.log("connected", res);
-                beet.voteFor(
+                beet.requestSignature(
                     {
-                        author: "krazykrista",
-                        permlink: "bitshares-scam-do-not-accept-proposed-transactions-that-update-your-account-data",
-                        weight: 1
+                        type: "customJSON",
+                        data: {
+                            requiredAuths: [ "sschiessl" ],
+                            requiredPostingAuths: [],
+                            id: "beet.example",
+                            json: {
+                                text: "This custom json data was put on Steem with Bett",
+                                url: "https://github.com/bitshares/beet"
+                            }
+                        }
                     }
                 ).then(account => {
-                    console.log("voteFor", account);
+                    console.log("requestSignature", account);
                 }).catch((err) => {
-                    console.error("voteFor", err);
+                    console.error("requestSignature", err);
                 });
             }).catch((err) => {
                 console.error(err);
             });
+
+            // beet.connect(identities[0]).then(res => {
+            //     console.log("connected", res);
+            //     beet.voteFor(
+            //         {
+            //             author: "krazykrista",
+            //             permlink: "bitshares-scam-do-not-accept-proposed-transactions-that-update-your-account-data",
+            //             weight: 1
+            //         }
+            //     ).then(account => {
+            //         console.log("voteFor", account);
+            //     }).catch((err) => {
+            //         console.error("voteFor", err);
+            //     });
+            // }).catch((err) => {
+            //     console.error(err);
+            // });
         }
     } catch (err) {
         console.error(err);

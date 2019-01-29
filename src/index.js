@@ -387,7 +387,6 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     requestSignature(payload) {
-        
         return this.sendRequest('api', {
             method: 'requestSignature',
             params: payload
@@ -401,7 +400,6 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     voteFor(payload) {
-        
         return this.sendRequest('api', {
             method: 'voteFor',
             params: payload
