@@ -406,6 +406,19 @@ class Beet {
         });
     }
 
+    /**
+     * Requests to execute a library call for the linked chain
+     *
+     * @param payload
+     * @returns {Promise} Resolving is done by Beet
+     */
+    injectedCall(payload) {
+        return this.sendRequest('api', {
+            method: 'injectedCall',
+            params: payload
+        });
+    }
+
 }
 
 

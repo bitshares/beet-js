@@ -7,14 +7,6 @@ beet.init('beet-js example for steem').then(identities => {
             beet.connect().then(res => {
                 beet.link('STEEM').then(res => {
                     console.log("linked");
-
-                    // comment this back in to debug id mismatch
-
-                    // beet.voteFor({id: '1.14.159'}).then(account => {
-                    //     console.log("voteFor", account);
-                    // }).catch((err) => {
-                    //     console.error("voteFor", err);
-                    // });
                 }).catch((err) => {
                     console.error(err);
                 });
@@ -23,27 +15,33 @@ beet.init('beet-js example for steem').then(identities => {
             });
         } else {
             beet.connect(identities[0]).then(res => {
-                console.log("connected", res);
-                beet.requestSignature(
-                    {
-                        type: "customJSON",
-                        data: {
-                            requiredAuths: [ "sschiessl" ],
-                            requiredPostingAuths: [],
-                            id: "beet",
-                            json: JSON.stringify([
+                console.log("connected", res, );
+                beet.getAccount().then(account => {
+                    if (typeof account == "string") {
+                        // fix bug that causes to return string instead of json
+                        account = JSON.parse(account);
+                    }
+                    // this calls steem.broadcast.customJson(wif, requiredAuths, requiredPostingAuths, id, json, callback)
+                    beet.injectedCall(
+                        [
+                            "customJson",  // operation name
+                            "inject_wif",
+                            [ account.account ],
+                            [],
+                            "beet",
+                            JSON.stringify([
                                 "broadcast-example",
                                 {
                                     text: "This custom json data was put on Steem with Beet",
                                     url: "https://github.com/bitshares/beet"
                                 }
                             ])
-                        }
-                    }
-                ).then(account => {
-                    console.log("requestSignature", account);
-                }).catch((err) => {
-                    console.error("requestSignature", err);
+                        ]
+                    ).then(res => {
+                        console.log("injectedCall", res);
+                    }).catch((err) => {
+                        console.error("injectedCall", err);
+                    });
                 });
             }).catch((err) => {
                 console.error(err);
