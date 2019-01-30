@@ -361,6 +361,31 @@ class Beet {
         return this.connected;
     }
 
+    getSteem(steem) {
+        let sendRequest = this.sendRequest.bind(this);
+        Object.getOwnPropertyNames(steem.broadcast).forEach((operationName) => {
+            if (!operationName.startsWith("_")) {
+                let injectedCall = function () {
+                    let args = Array.prototype.slice.call(arguments);
+                    // last argument is always callback
+                    let callback = args.pop();
+                    // first argument will be operation name
+                    args.unshift(operationName);
+                    sendRequest('api', {
+                        method: 'injectedCall',
+                        params: args
+                    }).then((result) => {
+                        callback(null, result);
+                    }).catch((err) => {
+                        callback(err, null);
+                    });
+                };
+                steem.broadcast[operationName] = injectedCall;
+            }
+        });
+        return steem;
+    }
+
     /* API Requests :
 
        The following should be split into chain-specific modules as multi-chain support is finalised
