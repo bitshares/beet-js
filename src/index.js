@@ -55,6 +55,37 @@ class Beet {
         return appstore;
     }
 
+    init2(appName, chain) {
+        let beet = this;
+        return new Promise((resolve,reject) => {
+            beet.init(appName).then(identities => {
+                    if (identities.length == 0) {
+                        beet.connect().then(res => {
+                            beet.link(chain).then(res => {
+                                resolve(res);
+                            }).catch((err) => {
+                                console.error(err);
+                                reject(false);
+                            });
+                        }).catch((err) => {
+                            console.error(err);
+                            reject(false);
+                        });
+                    } else {
+                        beet.connect(identities[0]).then(res => {
+                            resolve(res);
+                        }).catch((err) => {
+                            console.error(err);
+                            reject(false);
+                        });
+                    }
+            }).catch((err) => {
+                console.error(err);
+                reject(false);
+            });
+        })
+    }
+
     /**
      * Pings Beet by hecking the version
      *
@@ -398,11 +429,18 @@ class Beet {
      *
      * @returns {Promise} Resolving is done by Beet
      */
-    getAccount() {        
-        return this.sendRequest('api', {
-            method: 'getAccount',
-            params: {}
-        });
+    getAccount() {
+        return new Promise((resolve,reject) => {
+            return this.sendRequest('api', {
+                method: 'getAccount',
+                params: {}
+            }).then(result => {
+                resolve(JSON.parse(result));
+            }).catch(err => {
+                reject(err);
+            });
+        })
+
     }
 
     /**
@@ -442,6 +480,28 @@ class Beet {
             method: 'injectedCall',
             params: payload
         });
+    }
+
+    /**
+     * Request a signed message with the given text in the common beet format
+     *
+     * @param text
+     * @returns {Promise} Resolving is done by Beet
+     */
+    signMessage(text) {
+        return new Promise((resolve,reject) => {
+            this.sendRequest('api', {
+                method: 'signMessage',
+                params: text
+            }).then(message => {
+                message = JSON.parse(message);
+                message.message = JSON.parse(message.message)
+                resolve(message);
+            }).catch(err => {
+               reject(err);
+            });
+        })
+
     }
 
 }
