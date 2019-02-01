@@ -495,13 +495,30 @@ class Beet {
                 params: text
             }).then(message => {
                 message = JSON.parse(message);
-                message.message = JSON.parse(message.message)
                 resolve(message);
             }).catch(err => {
                reject(err);
             });
         })
+    }
 
+    /**
+     * Requests to verify a signed message with the given text in the common beet format
+     *
+     * @param text
+     * @returns {Promise} Resolving is done by Beet
+     */
+    verifyMessage(signedMessage) {
+        return new Promise((resolve,reject) => {
+            this.sendRequest('api', {
+                method: 'verifyMessage',
+                params: signedMessage
+            }).then(result => {
+                resolve(result);
+            }).catch(err => {
+                reject(err);
+            });
+        })
     }
 
 }
