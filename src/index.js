@@ -392,6 +392,77 @@ class Beet {
         return this.connected;
     }
 
+    getBitShares(bitshares) {
+        let sendRequest = this.sendRequest.bind(this);
+        let add_signer_op = function add_signer(private_key, public_key) {
+            if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
+                throw new Error("Do not inject wif while using Beet")
+            }
+            if (!this.signer_public_keys) {
+                this.signer_public_keys = [];
+            }
+            this.signer_public_keys.push(public_key);
+        };
+        let sign_op = function sign(chain_id = null) {
+            // do nothing, wait for broadcast
+            if (!this.tr_buffer) {
+                throw new Error("not finalized");
+            }
+            if (this.signed) {
+                throw new Error("already signed");
+            }
+            if (!this.signer_public_keys.length) {
+                throw new Error(
+                    "Transaction was not signed. Do you have a private key? [no_signers]"
+                );
+            }
+            this.signed = true;
+        };
+        let send_to_beet = function sendToBeet(tr_buffer, public_keys) {
+            return new Promise((resolve, reject) => {
+                let args = ["signAndBroadcast", tr_buffer, public_keys];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        };
+        let broadcaast_op = function broadcast(was_broadcast_callback) {
+            return  new Promise((resolve, reject) => {
+                // forward to beet
+                if (this.tr_buffer) {
+                    send_to_beet(this.tr_buffer, this.signer_public_keys).then(
+                        result => {
+                            if (!!was_broadcast_callback) {
+                                was_broadcast_callback();
+                            }
+                            resolve(result);
+                        }
+                    ).catch(err => {
+                        reject(err);
+                    });
+                } else {
+                    return this.finalize().then(() => {
+                        send_to_beet(this.tr_buffer, this.signer_public_keys).then(
+                            result => {
+                                if (!!was_broadcast_callback) {
+                                    was_broadcast_callback();
+                                }
+                                resolve(result);
+                            }
+                        ).catch(err => {
+                            reject(err);
+                        })
+                    });
+                }
+            });
+        }
+    }
+
     getSteem(steem) {
         let sendRequest = this.sendRequest.bind(this);
         Object.getOwnPropertyNames(steem.broadcast).forEach((operationName) => {
