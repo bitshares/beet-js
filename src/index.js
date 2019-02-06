@@ -55,6 +55,46 @@ class Beet {
         return appstore;
     }
 
+    initAndConnect(appName, chain) {
+        let beet = this;
+        return new Promise((resolve,reject) => {
+            beet.init(appName).then(identities => {
+                let useThis = identities.find((element) => {
+                    return element.chain == chain;
+                });
+                if (!useThis) {
+                    beet.connect().then(res => {
+                        beet.link(chain).then(res => {
+                            resolve(res);
+                            return;
+                        }).catch((err) => {
+                            console.error(err);
+                            reject(false);
+                            return;
+                        });
+                    }).catch((err) => {
+                        console.error(err);
+                        reject(false);
+                        return;
+                    });
+                } else {
+                    beet.connect(useThis).then(res => {
+                        resolve(res);
+                        return;
+                    }).catch((err) => {
+                        console.error(err);
+                        reject(false);
+                        return;
+                    });
+                }
+            }).catch((err) => {
+                console.error(err);
+                reject(false);
+                return;
+            });
+        })
+    }
+
     /**
      * Pings Beet by hecking the version
      *
@@ -189,6 +229,7 @@ class Beet {
                     counter: 0,
                     secret: OTPAuth.Secret.fromHex(this.identity.secret)
                 });
+                console.log("otp instantiated", this.identity.secret.toString());
                 resolve(res);
             }).catch(rej => {
                 reject(rej);
@@ -240,7 +281,7 @@ class Beet {
                 this.connected = true;
                 var auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
-                    console.log(res);
+                    console.log("connect", res);
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
                     if (this.linked) {
@@ -252,9 +293,11 @@ class Beet {
                             counter: 0,
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
+                        console.log("otp instantiated", this.identity.secret.toString());
                     } else {
                         this.beetkey = res.pub_key;
                     }
+                    console.log(this.identity.secret);
                     resolve(res);
 
                 }).catch(rej => {
@@ -267,13 +310,26 @@ class Beet {
                 this.socket = null;
             }
             this.socket.onmessage = async (evt) => {
-                console.log('received');
+                console.log("socket.onmessage", evt);
                 let msg = JSON.parse(evt.data);
-                const openRequest = this.openRequests.find(x => x.id === msg.id);
+                const openRequest = this.openRequests.find(
+                    (x) => {
+                        return x.id === msg.id ||x.id.toString() === msg.id
+                    }
+                );
                 if (!openRequest) return;
                 if (msg.error) {
-                    openRequest.reject(msg.payload.message);
-                    if(msg.payload.code==2) {
+                    if (msg.encrypted) {
+                        this.otp.counter = msg.id;
+                        let key = this.otp.generate();
+                        var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
+                        console.log("otp key generated", this.otp.counter);
+                        console.log("socket.onmessage payload", response);
+                        openRequest.reject(response);
+                    } else {
+                        openRequest.reject(msg.payload.message);
+                    }
+                    if(msg.payload.code == 2) {
                         await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).delete();
                         this.reset();
                     }
@@ -282,7 +338,8 @@ class Beet {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
                         var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
-                        console.log(response);
+                        console.log("otp key generated", this.otp.counter);
+                        console.log("socket.onmessage payload", response);
                         openRequest.resolve(response);
                     } else {
                         openRequest.resolve(msg.payload);
@@ -301,16 +358,18 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     async sendRequest(type, payload) {
+        console.log("sendRequest", type, payload);
         return new Promise(async (resolve, reject) => {
             let request = {}
             request.type = type;
             if (type == 'api') {
                 let ids = await this.fetch_ids();
-                console.log(ids);
                 payload.next_hash = ids.next_hash;
                 request.id = ids.id;
                 this.otp.counter = request.id;
                 let key = this.otp.generate();
+                console.log("otp key generated", this.otp.counter);
+                console.log("sendRequest payload", payload);
                 request.payload = CryptoJS.AES.encrypt(JSON.stringify(payload), key).toString();
             } else {
                 request.id = await this.generate_id();
@@ -321,7 +380,7 @@ class Beet {
                 reject
             }));
             this.socket.send(JSON.stringify(request));
-            console.log('sent');
+            console.log('sendRequest dispatched', request);
         });
     }
 
@@ -342,6 +401,102 @@ class Beet {
         return this.connected;
     }
 
+    getBitShares(bitshares) {
+        let sendRequest = this.sendRequest.bind(this);
+        let add_signer_op = function add_signer(private_key, public_key) {
+            if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
+                throw new Error("Do not inject wif while using Beet")
+            }
+            if (!this.signer_public_keys) {
+                this.signer_public_keys = [];
+            }
+            this.signer_public_keys.push(public_key);
+        };
+        let sign_op = function sign(chain_id = null) {
+            // do nothing, wait for broadcast
+            if (!this.tr_buffer) {
+                throw new Error("not finalized");
+            }
+            if (this.signed) {
+                throw new Error("already signed");
+            }
+            if (!this.signer_public_keys.length) {
+                throw new Error(
+                    "Transaction was not signed. Do you have a private key? [no_signers]"
+                );
+            }
+            this.signed = true;
+        };
+        let send_to_beet = function sendToBeet(tr_buffer, public_keys) {
+            return new Promise((resolve, reject) => {
+                let args = ["signAndBroadcast", tr_buffer, public_keys];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        };
+        let broadcaast_op = function broadcast(was_broadcast_callback) {
+            return  new Promise((resolve, reject) => {
+                // forward to beet
+                if (this.tr_buffer) {
+                    send_to_beet(this.tr_buffer, this.signer_public_keys).then(
+                        result => {
+                            if (!!was_broadcast_callback) {
+                                was_broadcast_callback();
+                            }
+                            resolve(result);
+                        }
+                    ).catch(err => {
+                        reject(err);
+                    });
+                } else {
+                    return this.finalize().then(() => {
+                        send_to_beet(this.tr_buffer, this.signer_public_keys).then(
+                            result => {
+                                if (!!was_broadcast_callback) {
+                                    was_broadcast_callback();
+                                }
+                                resolve(result);
+                            }
+                        ).catch(err => {
+                            reject(err);
+                        })
+                    });
+                }
+            });
+        }
+    }
+
+    getSteem(steem) {
+        let sendRequest = this.sendRequest.bind(this);
+        Object.getOwnPropertyNames(steem.broadcast).forEach((operationName) => {
+            if (!operationName.startsWith("_")) {
+                let injectedCall = function () {
+                    let args = Array.prototype.slice.call(arguments);
+                    // last argument is always callback
+                    let callback = args.pop();
+                    // first argument will be operation name
+                    args.unshift(operationName);
+                    sendRequest('api', {
+                        method: 'injectedCall',
+                        params: args
+                    }).then((result) => {
+                        callback(null, result);
+                    }).catch((err) => {
+                        callback(err, null);
+                    });
+                };
+                steem.broadcast[operationName] = injectedCall;
+            }
+        });
+        return steem;
+    }
+
     /* API Requests :
 
        The following should be split into chain-specific modules as multi-chain support is finalised
@@ -354,11 +509,18 @@ class Beet {
      *
      * @returns {Promise} Resolving is done by Beet
      */
-    getAccount() {        
-        return this.sendRequest('api', {
-            method: 'getAccount',
-            params: {}
-        });
+    getAccount() {
+        return new Promise((resolve,reject) => {
+            return this.sendRequest('api', {
+                method: 'getAccount',
+                params: {}
+            }).then(result => {
+                resolve(JSON.parse(result));
+            }).catch(err => {
+                reject(err);
+            });
+        })
+
     }
 
     /**
@@ -368,7 +530,6 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     requestSignature(payload) {
-        
         return this.sendRequest('api', {
             method: 'requestSignature',
             params: payload
@@ -382,15 +543,65 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     voteFor(payload) {
-        
         return this.sendRequest('api', {
             method: 'voteFor',
             params: payload
         });
     }
 
-}
+    /**
+     * Requests to execute a library call for the linked chain
+     *
+     * @param payload
+     * @returns {Promise} Resolving is done by Beet
+     */
+    injectedCall(payload) {
+        return this.sendRequest('api', {
+            method: 'injectedCall',
+            params: payload
+        });
+    }
 
+    /**
+     * Request a signed message with the given text in the common beet format
+     *
+     * @param text
+     * @returns {Promise} Resolving is done by Beet
+     */
+    signMessage(text) {
+        return new Promise((resolve,reject) => {
+            this.sendRequest('api', {
+                method: 'signMessage',
+                params: text
+            }).then(message => {
+                message = JSON.parse(message);
+                resolve(message);
+            }).catch(err => {
+               reject(err);
+            });
+        })
+    }
+
+    /**
+     * Requests to verify a signed message with the given text in the common beet format
+     *
+     * @param text
+     * @returns {Promise} Resolving is done by Beet
+     */
+    verifyMessage(signedMessage) {
+        return new Promise((resolve,reject) => {
+            this.sendRequest('api', {
+                method: 'verifyMessage',
+                params: signedMessage
+            }).then(result => {
+                resolve(result);
+            }).catch(err => {
+                reject(err);
+            });
+        })
+    }
+
+}
 
 class Holder {
     constructor(_companion) {
@@ -403,3 +614,49 @@ let holder = new Holder(new Beet());
 if (typeof window !== 'undefined') window.beet = holder.beet;
 
 export default holder;
+
+/**
+ * Ensure that each app gets one singleton of Beet
+ */
+class BeetBox {
+    constructor() {
+        this._beet_instances = {}
+    }
+
+    get(appName, chain) {
+        if (!this._beet_instances[appName]) {
+            this._beet_instances[appName] = new Beet();
+        }
+        return new Promise((resolve, reject) => {
+            let beet = this._beet_instances[appName];
+            if (beet.initialised && beet.connected && beet.authenticated) {
+                resolve(beet);
+                return;
+            } else {
+                beet.initAndConnect(appName, chain).then(result => {
+                    resolve(beet);
+                    return;
+                }).catch(err => {
+                    console.error(err);
+                    reject(false);
+                    return;
+                });
+            }
+        });
+    }
+}
+
+/**
+ *  BeetBox itself is a singleton for each window
+ */
+let beetBox = null;
+if (typeof window !== 'undefined') {
+    if (!!window.beetBox) {
+        beetBox = window.beetBox;
+    } else {
+        beetBox = new BeetBox();
+        window.beetBox = beetBox;
+    }
+}
+
+export {beetBox};
