@@ -594,7 +594,6 @@ class Beet {
 
 }
 
-
 class Holder {
     constructor(_companion) {
         this.beet = _companion;
@@ -606,3 +605,75 @@ let holder = new Holder(new Beet());
 if (typeof window !== 'undefined') window.beet = holder.beet;
 
 export default holder;
+
+/**
+ * Ensure that each app gets one singleton of Beet
+ */
+class BeetBox {
+    constructor() {
+        this._beet_instances = {}
+    }
+
+    get(appName, chain) {
+        if (!this._beet_instances[appName]) {
+            this._beet_instances[appName] = new Beet();
+        }
+        return new Promise((resolve, reject) => {
+            let beet = this._beet_instances[appName];
+            if (beet.initialised && beet.connected && beet.authenticated) {
+                resolve(beet);
+                return;
+            } else {
+                beet.init(appName).then(identities => {
+                    let useThis = identities.find((element) => {
+                        return element.chain == chain;
+                    });
+                    if (!useThis) {
+                        beet.connect().then(res => {
+                            beet.link(chain).then(res => {
+                                resolve(beet);
+                                return;
+                            }).catch((err) => {
+                                console.error(err);
+                                reject(false);
+                                return;
+                            });
+                        }).catch((err) => {
+                            console.error(err);
+                            reject(false);
+                            return;
+                        });
+                    } else {
+                        beet.connect(useThis).then(res => {
+                            resolve(beet);
+                            return;
+                        }).catch((err) => {
+                            console.error(err);
+                            reject(false);
+                            return;
+                        });
+                    }
+                }).catch((err) => {
+                    console.error(err);
+                    reject(false);
+                    return;
+                });
+            }
+        });
+    }
+}
+
+/**
+ *  BeetBox itself is a singleton for each window
+ */
+let beetBox = null;
+if (typeof window !== 'undefined') {
+    if (!!window.beetBox) {
+        beetBox = window.beetBox;
+    } else {
+        beetBox = new BeetBox();
+        window.beetBox = beetBox;
+    }
+}
+
+export {beetBox};
