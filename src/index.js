@@ -55,33 +55,42 @@ class Beet {
         return appstore;
     }
 
-    init2(appName, chain) {
+    initAndConnect(appName, chain) {
         let beet = this;
         return new Promise((resolve,reject) => {
             beet.init(appName).then(identities => {
-                    if (identities.length == 0) {
-                        beet.connect().then(res => {
-                            beet.link(chain).then(res => {
-                                resolve(res);
-                            }).catch((err) => {
-                                console.error(err);
-                                reject(false);
-                            });
-                        }).catch((err) => {
-                            console.error(err);
-                            reject(false);
-                        });
-                    } else {
-                        beet.connect(identities[0]).then(res => {
+                let useThis = identities.find((element) => {
+                    return element.chain == chain;
+                });
+                if (!useThis) {
+                    beet.connect().then(res => {
+                        beet.link(chain).then(res => {
                             resolve(res);
+                            return;
                         }).catch((err) => {
                             console.error(err);
                             reject(false);
+                            return;
                         });
-                    }
+                    }).catch((err) => {
+                        console.error(err);
+                        reject(false);
+                        return;
+                    });
+                } else {
+                    beet.connect(useThis).then(res => {
+                        resolve(res);
+                        return;
+                    }).catch((err) => {
+                        console.error(err);
+                        reject(false);
+                        return;
+                    });
+                }
             }).catch((err) => {
                 console.error(err);
                 reject(false);
+                return;
             });
         })
     }
@@ -624,36 +633,10 @@ class BeetBox {
                 resolve(beet);
                 return;
             } else {
-                beet.init(appName).then(identities => {
-                    let useThis = identities.find((element) => {
-                        return element.chain == chain;
-                    });
-                    if (!useThis) {
-                        beet.connect().then(res => {
-                            beet.link(chain).then(res => {
-                                resolve(beet);
-                                return;
-                            }).catch((err) => {
-                                console.error(err);
-                                reject(false);
-                                return;
-                            });
-                        }).catch((err) => {
-                            console.error(err);
-                            reject(false);
-                            return;
-                        });
-                    } else {
-                        beet.connect(useThis).then(res => {
-                            resolve(beet);
-                            return;
-                        }).catch((err) => {
-                            console.error(err);
-                            reject(false);
-                            return;
-                        });
-                    }
-                }).catch((err) => {
+                beet.initAndConnect(appName, chain).then(result => {
+                    resolve(beet);
+                    return;
+                }).catch(err => {
                     console.error(err);
                     reject(false);
                     return;
