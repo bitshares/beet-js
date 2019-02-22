@@ -401,9 +401,9 @@ class Beet {
         return this.connected;
     }
 
-    getBitShares(bitshares) {
+    getBitShares(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
-        let add_signer_op = function add_signer(private_key, public_key) {
+        TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
             if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
                 throw new Error("Do not inject wif while using Beet")
             }
@@ -412,7 +412,7 @@ class Beet {
             }
             this.signer_public_keys.push(public_key);
         };
-        let sign_op = function sign(chain_id = null) {
+        TransactionBuilder.prototype.sign = function sign(chain_id = null) {
             // do nothing, wait for broadcast
             if (!this.tr_buffer) {
                 throw new Error("not finalized");
@@ -440,7 +440,7 @@ class Beet {
                 });
             });
         };
-        let broadcaast_op = function broadcast(was_broadcast_callback) {
+        TransactionBuilder.prototype.broadcast = function broadcast(was_broadcast_callback) {
             return  new Promise((resolve, reject) => {
                 // forward to beet
                 if (this.tr_buffer) {
@@ -470,6 +470,7 @@ class Beet {
                 }
             });
         }
+        return TransactionBuilder;
     }
 
     getSteem(steem) {
