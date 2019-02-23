@@ -3,96 +3,28 @@ import CryptoJS from "crypto-js";
 import browser from 'browser-detect';
 import BeetClientDB from './lib/BeetClientDB';
 import "isomorphic-fetch";
-import { ec as EC } from "elliptic"; 
+import {
+    ec as EC
+} from "elliptic";
 var ec = new EC('curve25519');
 
-class Beet {
+class BeetJS {
+
+    
 
     constructor() {
+        this._beetAppInstances = {};
         this.host = 'wss://local.get-beet.io:60556';
-        this.connected = false; // State of WS Connection to Beet
-        this.authenticated = false; // Whether this app has identified itself to Beet 
-        this.linked = false; // Whether this app has linked itself to a Beet account/id
-        this.initialised = false; // Whether this client has been initialised (app name & domain/origin set)
-        this.socket = null; // Holds the ws connection
-        this.appName = null; // Name/identifier of the app making use of this client
-        this.otp = null;  // Holds the one-time-password generation for the linked account
-        this.openRequests = []; // Holds pending API request promises to be resolved upon beet response
-        this.origin = null; // Holds domain-name/origin of this instance
     }
-    reset() {
-        this.connected = false;
-        this.authenticated = false;
-        this.linked = false;        
-        this.socket = null;        
-        this.otp = null;
-        this.openRequests = [];        
-        this.socket = null;
-    }
-
-    /**
-     * Assuming beet-js is deployed on www.mydomain.com. Running init('My Cool App') will set appName to 'My Cool App' and origin to 'www.mydomain.com'
-     * and return all cached linked accounts
-     *
-     * @param {string} appName Name of the application that wants to use Beet
-     * @returns {array} appStore
-     */
-    async init(appName) {
-        if (this.initialised === false) {
-            this.appName = appName;
-            this.origin = appName; // FIXME put in actual origin
-            if (typeof location !== 'undefined') {
-                if (location.hasOwnProperty('hostname') && location.hostname.length && location.hostname !== 'localhost') {
-                    this.origin = location.hostname;
-                }
-            }
+    async get(appName) {
+        if (this._beetAppInstances[appName]) {
+            return this._beetAppInstances[appName];
+        } else {
+            let appInstance = new BeetApp(appName);
+            await appInstance.init();
+            this._beetAppInstances[appName] = appInstance;
+            return this._beetAppInstances[appName];
         }
-        this.detected = browser();
-        this.keyhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName).toString();
-        let appstore;
-        appstore = await BeetClientDB.apps.where("keyhash").equals(this.keyhash).toArray();
-        this.initialised = true;
-        return appstore;
-    }
-
-    initAndConnect(appName, chain) {
-        let beet = this;
-        return new Promise((resolve,reject) => {
-            beet.init(appName).then(identities => {
-                let useThis = identities.find((element) => {
-                    return element.chain == chain;
-                });
-                if (!useThis) {
-                    beet.connect().then(res => {
-                        beet.link(chain).then(res => {
-                            resolve(res);
-                            return;
-                        }).catch((err) => {
-                            console.error(err);
-                            reject(false);
-                            return;
-                        });
-                    }).catch((err) => {
-                        console.error(err);
-                        reject(false);
-                        return;
-                    });
-                } else {
-                    beet.connect(useThis).then(res => {
-                        resolve(res);
-                        return;
-                    }).catch((err) => {
-                        console.error(err);
-                        reject(false);
-                        return;
-                    });
-                }
-            }).catch((err) => {
-                console.error(err);
-                reject(false);
-                return;
-            });
-        })
     }
 
     /**
@@ -100,7 +32,7 @@ class Beet {
      *
      * @returns {Promise} Resolves to the installed version of Beet
      */
-    ping() { 
+    ping() {
         let ping;
         return new Promise(async (resolve, reject) => {
             try {
@@ -141,6 +73,134 @@ class Beet {
         })
     }
 
+}
+class BeetApp {
+
+
+    constructor(appName) {
+        this.appName = appName;
+        this.origin = appName; // FIXME put in actual origin
+        if (typeof location !== 'undefined') {
+            if (location.hasOwnProperty('hostname') && location.hostname.length && location.hostname !== 'localhost') {
+                this.origin = location.hostname;
+            }
+        }
+        this.detected = browser();
+        this.appHash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName).toString();
+
+    }
+    async init() {
+        this.appstore = await BeetClientDB.apps.where("apphash").equals(this.appHash).toArray();
+        this._beetConnections = {};
+    }
+    list() {
+        return this.appstore;
+    }
+    async getConnection(identity) {
+        if (this._beetConnections[identity.identityhash]) {
+            return this._beetConnections[identity.identityhash];
+        } else {
+            let beetConnection = new BeetConnection(this.appName);
+            try {
+                beetConnection.connect(identity);
+                this._beetConnections[identity.identityhash] = beetConnection;
+                return this._beetConnections[identity.identityhash];
+            } catch (err) {
+                throw new Error(err);
+                // TODO: if linking error, re-link transparently instead
+            }
+        }
+    }
+    async getChainConnection(chainType, existing = true) {
+        if (existing) {
+            let compatibleIdentities = this.appstore.filter(id => {
+                return id.chain == chainType
+            });
+            if (compatibleIdentities.length > 0) {
+                try {
+                    let beetConnection = this.getConnection(compatibleIdentities[0]);
+                    return beetConnection;
+                } catch (err) {
+                    return this.getChainConnection(chainType, false);
+                }
+            }else{
+                return this.getChainConnection(chainType, false);
+            }
+        } else {
+            let beetConnection = new BeetConnection(this.appName);
+            try {
+                let isReady = await beetConnection.connect();
+                let identityhash = await beetConnection.link(chainType);
+                this._beetConnections[identityhash] = beetConnection;
+                return this._beetConnections[identityhash];
+            } catch (err) {
+                throw new Error(err);
+            }
+        }
+    }
+
+    async getAnyConnection(existing = true) {
+        if (existing) {
+
+            if (this.appstore.length > 0) {
+                try {
+                    let beetConnection = this.getConnection(this.appstore[0]);
+                    return beetConnection;
+                } catch (err) {
+                    return this.getAnyConnection(false);
+                }
+            }else{
+                return this.getAnyConnection(false);
+            }
+        } else {
+            let beetConnection = new BeetConnection(this.appName);
+            try {
+                let isReady = await beetConnection.connect();
+                let identityhash = await beetConnection.link(); // Need to modify link to allow for no chain preference
+
+                this._beetConnections[identityhash] = beetConnection;
+                return this._beetConnections[identityhash];
+            } catch (err) {
+                throw new Error(err);
+            }
+        }
+    }
+}
+
+class BeetConnection {
+
+    constructor(appName) {
+        this.host = 'wss://local.get-beet.io:60556';
+        this.connected = false; // State of WS Connection to Beet
+        this.authenticated = false; // Whether this app has identified itself to Beet 
+        this.linked = false; // Whether this app has linked itself to a Beet account/id
+        this.initialised = true; // Whether this client has been initialised (app name & domain/origin set)
+        this.socket = null; // Holds the ws connection
+        this.appName = appName; // Name/identifier of the app making use of this client
+        this.otp = null; // Holds the one-time-password generation for the linked account
+        this.openRequests = []; // Holds pending API request promises to be resolved upon beet response
+        this.origin = null; // Holds domain-name/origin of this instance
+        this.appName = appName;
+        this.origin = appName; // FIXME put in actual origin
+        if (typeof location !== 'undefined') {
+            if (location.hasOwnProperty('hostname') && location.hostname.length && location.hostname !== 'localhost') {
+                this.origin = location.hostname;
+            }
+        }
+        this.detected = browser();
+        this.apphash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName).toString();
+    }
+
+    reset() {
+        this.connected = false;
+        this.authenticated = false;
+        this.linked = false;
+        this.socket = null;
+        this.otp = null;
+        this.openRequests = [];
+        this.socket = null;
+    }
+
     /**
      * Generates a random id for an API request
      *
@@ -151,8 +211,8 @@ class Beet {
     }
     // Used to get the available id for a request and replace it with a new one while also returning its hash
     async fetch_ids() {
-        
-        let app = await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).first();        
+
+        let app = await BeetClientDB.apps.where("identityhash").equals(this.identity.identityhash).first();
         let id = app.next_id;
         let new_id = await this.next_id();
         let next_hash = await CryptoJS.SHA256('' + new_id).toString();
@@ -170,8 +230,8 @@ class Beet {
     async next_id() {
         if (this.connected && this.authenticated && this.linked) {
             let new_id = this.generate_id();
-            
-            await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).modify({
+
+            await BeetClientDB.apps.where("identityhash").equals(this.identity.identityhash).modify({
                 next_id: new_id
             });
             return new_id;
@@ -186,17 +246,17 @@ class Beet {
      * @param {String} chain Symbol of the chain to be linked
      * @returns {Promise} Resolves to false if not linked after timeout, or to result of 'link' Beet call
      */
-    async link(chain = 'BTS') {
+    async link(chain = null) {
         return new Promise(async (resolve, reject) => {
             if (!this.connected) throw new Error("You must connect to Beet first.");
-            if (!this.initialised) throw new Error("You must initialise the Beet Client first via init(appName).");            
+            if (!this.initialised) throw new Error("You must initialise the Beet Client first via init(appName).");
             setTimeout(() => {
                 resolve(false);
             }, this.options.linkTimeout);
-            let keypair= ec.genKeyPair();
+            let keypair = ec.genKeyPair();
             this.privk = keypair.getPrivate();
-            let pubkey = keypair.getPublic().encode('hex');            
-            this.secret =keypair.derive(ec.keyFromPublic(this.beetkey, 'hex').getPublic());            
+            let pubkey = keypair.getPublic().encode('hex');
+            this.secret = keypair.derive(ec.keyFromPublic(this.beetkey, 'hex').getPublic());
             var next_id = Math.round(Math.random() * 100000000 + 1);
             this.chain = chain;
             var next_hash = await CryptoJS.SHA256('' + next_id);
@@ -205,12 +265,16 @@ class Beet {
                 pubkey: pubkey,
                 next_hash: next_hash.toString()
             }
+            if (this.chain == null) {
+                linkobj.chain = 'ANY'
+            }
             var link = this.sendRequest('link', linkobj);
             link.then(async res => {
-                this.apphash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
+                this.chain = res.chain;
+                this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
                 this.appstore = await BeetClientDB.apps.add({
-                    keyhash: this.keyhash,
                     apphash: this.apphash,
+                    identityhash: this.identityhash,
                     account_id: res.account_id,
                     chain: this.chain,
                     appName: this.appName,
@@ -219,7 +283,7 @@ class Beet {
                 });
                 this.authenticated = res.authenticate;
                 this.linked = res.link;
-                this.identity = await BeetClientDB.apps.where("apphash").equals(this.apphash).first();
+                this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();
 
                 this.otp = new OTPAuth.HOTP({
                     issuer: "Beet",
@@ -230,7 +294,7 @@ class Beet {
                     secret: OTPAuth.Secret.fromHex(this.identity.secret)
                 });
                 console.log("otp instantiated", this.identity.secret.toString());
-                resolve(res);
+                resolve(this.identityhash);
             }).catch(rej => {
                 reject(rej);
             });
@@ -267,7 +331,7 @@ class Beet {
                     origin: this.origin,
                     appName: this.appName,
                     browser: this.detected.name,
-                    apphash: this.identity.apphash
+                    apphash: this.identity.identityhash
                 };
             } else {
                 authobj = {
@@ -305,7 +369,7 @@ class Beet {
                 });
             }
             this.socket.onclose = function (evt) {
-                
+
                 this.connected = false;
                 this.socket = null;
             }
@@ -314,7 +378,7 @@ class Beet {
                 let msg = JSON.parse(evt.data);
                 const openRequest = this.openRequests.find(
                     (x) => {
-                        return x.id === msg.id ||x.id.toString() === msg.id
+                        return x.id === msg.id || x.id.toString() === msg.id
                     }
                 );
                 if (!openRequest) return;
@@ -329,8 +393,8 @@ class Beet {
                     } else {
                         openRequest.reject(msg.payload.message);
                     }
-                    if(msg.payload.code == 2) {
-                        await BeetClientDB.apps.where("apphash").equals(this.identity.apphash).delete();
+                    if (msg.payload.code == 2) {
+                        await BeetClientDB.apps.where("identityhash").equals(this.identity.identityhash).delete();
                         this.reset();
                     }
                 } else {
@@ -441,7 +505,7 @@ class Beet {
             });
         };
         let broadcaast_op = function broadcast(was_broadcast_callback) {
-            return  new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 // forward to beet
                 if (this.tr_buffer) {
                     send_to_beet(this.tr_buffer, this.signer_public_keys).then(
@@ -510,7 +574,7 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     getAccount() {
-        return new Promise((resolve,reject) => {
+        return new Promise((resolve, reject) => {
             return this.sendRequest('api', {
                 method: 'getAccount',
                 params: {}
@@ -569,7 +633,7 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     signMessage(text) {
-        return new Promise((resolve,reject) => {
+        return new Promise((resolve, reject) => {
             this.sendRequest('api', {
                 method: 'signMessage',
                 params: text
@@ -577,7 +641,7 @@ class Beet {
                 message = JSON.parse(message);
                 resolve(message);
             }).catch(err => {
-               reject(err);
+                reject(err);
             });
         })
     }
@@ -589,7 +653,7 @@ class Beet {
      * @returns {Promise} Resolving is done by Beet
      */
     verifyMessage(signedMessage) {
-        return new Promise((resolve,reject) => {
+        return new Promise((resolve, reject) => {
             this.sendRequest('api', {
                 method: 'verifyMessage',
                 params: signedMessage
@@ -600,7 +664,6 @@ class Beet {
             });
         })
     }
-
 }
 
 class Holder {
@@ -608,55 +671,7 @@ class Holder {
         this.beet = _companion;
     }
 }
-
-
-let holder = new Holder(new Beet());
+let holder = new Holder(new BeetJS());
 if (typeof window !== 'undefined') window.beet = holder.beet;
 
 export default holder;
-
-/**
- * Ensure that each app gets one singleton of Beet
- */
-class BeetBox {
-    constructor() {
-        this._beet_instances = {}
-    }
-
-    get(appName, chain) {
-        if (!this._beet_instances[appName]) {
-            this._beet_instances[appName] = new Beet();
-        }
-        return new Promise((resolve, reject) => {
-            let beet = this._beet_instances[appName];
-            if (beet.initialised && beet.connected && beet.authenticated) {
-                resolve(beet);
-                return;
-            } else {
-                beet.initAndConnect(appName, chain).then(result => {
-                    resolve(beet);
-                    return;
-                }).catch(err => {
-                    console.error(err);
-                    reject(false);
-                    return;
-                });
-            }
-        });
-    }
-}
-
-/**
- *  BeetBox itself is a singleton for each window
- */
-let beetBox = null;
-if (typeof window !== 'undefined') {
-    if (!!window.beetBox) {
-        beetBox = window.beetBox;
-    } else {
-        beetBox = new BeetBox();
-        window.beetBox = beetBox;
-    }
-}
-
-export {beetBox};
