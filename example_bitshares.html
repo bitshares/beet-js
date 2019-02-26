@@ -5,11 +5,16 @@ beet.get('My App').then( async app => {
     console.log(identities);
     let connection;
     if (identities.length>0) {
-        connection=await app.getConnnection(identities[0]);
+        connection=await app.getChainConnection('EOS',true);
     }else{
-        connection=await app.getChainConnection('BTS',true);
+        connection=await app.getAnyConnection(false);
     }
     console.log(connection);
+    connection.voteFor({id: '1.14.168'}).then(account => {
+                    console.log("voteFor", account);
+                }).catch((err) => {
+                    console.error("voteFor", err);
+                });
 });
 
 </script>
