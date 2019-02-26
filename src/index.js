@@ -10,20 +10,50 @@ var ec = new EC('curve25519');
 
 class BeetJS {
 
-    
-
     constructor() {
         this._beetAppInstances = {};
         this.host = 'wss://local.get-beet.io:60556';
     }
-    async get(appName) {
+
+    /**
+     * Gets an instance of a beet connected application, if a chain selector is provided does the identity handling as well
+     * @param appName
+     * @returns {Promise<*>}
+     */
+    async get(appName, chainSelector = null) {
+        let _beet = null;
         if (this._beetAppInstances[appName]) {
-            return this._beetAppInstances[appName];
+            _beet = this._beetAppInstances[appName];
         } else {
             let appInstance = new BeetApp(appName);
             await appInstance.init();
             this._beetAppInstances[appName] = appInstance;
-            return this._beetAppInstances[appName];
+            _beet = this._beetAppInstances[appName];
+        }
+        if (chainSelector != null) {
+            if (typeof chainSelector == "string") {
+                chainSelector = [chainSelector]
+            }
+            if (typeof chainSelector !== "object" && chainSelector.length > 0 && typeof chainSelector[0] == "string" ) {
+                throw "chainSelector must be null, a string or list of strings"
+            }
+            // get already saved identities
+            let identities = await _beet.list();
+
+            let returnValue = {beet: _beet};
+            for (let idx in chainSelector) {
+                let chain = chainSelector[idx];
+                let identity = identities.find(_id => {
+                    return _id.chain == chain;
+                });
+                console.log(chain, identity)
+                if (!!identity) {
+                    returnValue[chain] = await _beet.getConnection(identity);
+                } else {
+                    returnValue[chain] = await _beet.getChainConnection(chain, true);
+                }
+            }
+            return returnValue;
         }
     }
 
