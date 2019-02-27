@@ -352,30 +352,52 @@ class BeetConnection {
             var link = this.sendRequest('link', linkobj);
             link.then(async res => {
                 this.chain = res.chain;
-                this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
-                this.appstore = await BeetClientDB.apps.add({
-                    apphash: this.apphash,
-                    identityhash: this.identityhash,
-                    account_id: res.account_id,
-                    chain: this.chain,
-                    appName: this.appName,
-                    secret: this.secret.toString('hex'),
-                    next_id: next_id
-                });
-                this.authenticated = res.authenticate;
-                this.linked = res.link;
-                this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();
+                if (res.existing) {
+                    this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
+                    try {
+                        this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();                                            
+                        this.authenticated = res.authenticate;
+                        this.linked = res.link;
+                        
+                        this.otp = new OTPAuth.HOTP({
+                            issuer: "Beet",
+                            label: "BeetAuth",
+                            algorithm: "SHA1",
+                            digits: 32,
+                            counter: 0,
+                            secret: OTPAuth.Secret.fromHex(this.identity.secret)
+                        });
+                        console.log("otp instantiated", this.identity.secret.toString());
+                        resolve(this.identityhash);
+                    }catch(e){
+                        throw new Error('Beet has an established identity but client does not.');
+                    }
+                }else{
+                    this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
+                    this.appstore = await BeetClientDB.apps.add({
+                        apphash: this.apphash,
+                        identityhash: this.identityhash,
+                        account_id: res.account_id,
+                        chain: this.chain,
+                        appName: this.appName,
+                        secret: this.secret.toString('hex'),
+                        next_id: next_id
+                    });
+                    this.authenticated = res.authenticate;
+                    this.linked = res.link;
+                    this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();
 
-                this.otp = new OTPAuth.HOTP({
-                    issuer: "Beet",
-                    label: "BeetAuth",
-                    algorithm: "SHA1",
-                    digits: 32,
-                    counter: 0,
-                    secret: OTPAuth.Secret.fromHex(this.identity.secret)
-                });
-                console.log("otp instantiated", this.identity.secret.toString());
-                resolve(this.identityhash);
+                    this.otp = new OTPAuth.HOTP({
+                        issuer: "Beet",
+                        label: "BeetAuth",
+                        algorithm: "SHA1",
+                        digits: 32,
+                        counter: 0,
+                        secret: OTPAuth.Secret.fromHex(this.identity.secret)
+                    });
+                    console.log("otp instantiated", this.identity.secret.toString());
+                    resolve(this.identityhash);
+                }
             }).catch(rej => {
                 reject(rej);
             });
