@@ -12,7 +12,6 @@ beet.get("My App", "BTS").then( async app => {
         (err) => console.log(err)
     ).init_promise.then(() => {
         try {
-            console.log(res);
             let  tr = new TransactionBuilder();
             let transfer_op = tr.get_type_operation("transfer", {
                 fee: {
