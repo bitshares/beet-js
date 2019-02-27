@@ -183,7 +183,7 @@ class BeetApp {
         } else {
             let beetConnection = new BeetConnection(this.appName);
             try {
-                beetConnection.connect(identity);
+                await beetConnection.connect(identity);
                 this._beetConnections[identity.identityhash] = beetConnection;
                 return this._beetConnections[identity.identityhash];
             } catch (err) {
