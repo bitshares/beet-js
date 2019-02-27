@@ -412,7 +412,7 @@ class BeetConnection {
                     origin: this.origin,
                     appName: this.appName,
                     browser: this.detected.name,
-                    apphash: this.identity.identityhash
+                    identityhash: this.identity.identityhash
                 };
             } else {
                 authobj = {
@@ -551,6 +551,14 @@ class BeetConnection {
 
     getBitShares(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
+        let _get_type_operation = TransactionBuilder.prototype.get_type_operation;
+        TransactionBuilder.prototype.get_type_operation = function get_type_operation(name, payload) {
+            if (!this.operations_to_send) {
+                this.operations_to_send = [];
+            }
+            this.operations_to_send.push([name, payload]);
+            return _get_type_operation.bind(this)(name, payload);
+        };
         TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
             if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
                 throw new Error("Do not inject wif while using Beet")
@@ -575,9 +583,13 @@ class BeetConnection {
             }
             this.signed = true;
         };
-        let send_to_beet = function sendToBeet(tr_buffer, public_keys) {
+        let send_to_beet = function sendToBeet(builder) {
+            console.log(builder);
             return new Promise((resolve, reject) => {
-                let args = ["signAndBroadcast", tr_buffer, public_keys];
+                if (builder.operations_to_send.length != builder.operations.length) {
+                    throw "Serialized and constructed operation count differs"
+                }
+                let args = ["signAndBroadcast", builder.ref_block_num, builder.ref_block_prefix, builder.expiration, builder.operations_to_send, builder.signer_public_keys];
                 sendRequest('api', {
                     method: 'injectedCall',
                     params: args
@@ -591,31 +603,16 @@ class BeetConnection {
         TransactionBuilder.prototype.broadcast = function broadcast(was_broadcast_callback) {
             return  new Promise((resolve, reject) => {
                 // forward to beet
-                if (this.tr_buffer) {
-                    send_to_beet(this.tr_buffer, this.signer_public_keys).then(
-                        result => {
-                            if (!!was_broadcast_callback) {
-                                was_broadcast_callback();
-                            }
-                            resolve(result);
+                send_to_beet(this).then(
+                    result => {
+                        if (!!was_broadcast_callback) {
+                            was_broadcast_callback();
                         }
-                    ).catch(err => {
-                        reject(err);
-                    });
-                } else {
-                    return this.finalize().then(() => {
-                        send_to_beet(this.tr_buffer, this.signer_public_keys).then(
-                            result => {
-                                if (!!was_broadcast_callback) {
-                                    was_broadcast_callback();
-                                }
-                                resolve(result);
-                            }
-                        ).catch(err => {
-                            reject(err);
-                        })
-                    });
-                }
+                        resolve(result);
+                    }
+                ).catch(err => {
+                    reject(err);
+                });
             });
         }
         return TransactionBuilder;
