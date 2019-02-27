@@ -549,7 +549,21 @@ class BeetConnection {
         return this.connected;
     }
 
-    getBitShares(TransactionBuilder) {
+    inject(pointOfInjection) {
+        if (this.identity.chain == "BTS") {
+            if (!!pointOfInjection.prototype && !!pointOfInjection.prototype.get_type_operation) {
+                // transaction builder
+                return this.injectTransactionBuilder(pointOfInjection);
+            }
+        } else if (this.identity.chain == "STEEM") {
+            if (!!pointOfInjection.broadcast) {
+                return this.injectSteemLib(pointOfInjection);
+            }
+        }
+        throw new Error("Unsupported point of injection")
+    }
+
+    injectTransactionBuilder(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
         let _get_type_operation = TransactionBuilder.prototype.get_type_operation;
         TransactionBuilder.prototype.get_type_operation = function get_type_operation(name, payload) {
@@ -618,7 +632,7 @@ class BeetConnection {
         return TransactionBuilder;
     }
 
-    getSteem(steem) {
+    injectSteemLib(steem) {
         let sendRequest = this.sendRequest.bind(this);
         Object.getOwnPropertyNames(steem.broadcast).forEach((operationName) => {
             if (!operationName.startsWith("_")) {

@@ -3,7 +3,7 @@
 <script>
 beet.get("My App", "BTS").then( async app => {
     console.log(app.BTS);
-    TransactionBuilder = app.BTS.getBitShares(bitshares_js.TransactionBuilder);
+    TransactionBuilder = app.BTS.inject(bitshares_js.TransactionBuilder);
     bitshares_js.bitshares_ws.Apis.instance(
         "wss://eu.nodes.bitshares.ws",
         true,
