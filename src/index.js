@@ -99,7 +99,7 @@ class BeetJS {
             for (let idx in chainSelector) {
                 let chain = chainSelector[idx];
                 let identity = identities.find(_id => {
-                    return _id.chain == chain;
+                    return _id.chain == chain || chain == 'ANY';
                 });
                 if (!!identity) {
                     returnValue[chain] = await _beetConnectedApp.getConnection(identity);
@@ -196,7 +196,7 @@ class BeetApp {
     async getChainConnection(chainType, existing = true) {
         if (existing) {
             let compatibleIdentities = this.appstore.filter(id => {
-                return id.chain == chainType
+                return id.chain == chainType || chainType == 'ANY'
             });
             if (compatibleIdentities.length > 0) {
                 try {
