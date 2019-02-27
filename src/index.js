@@ -253,7 +253,7 @@ class BeetConnection {
 
     constructor(appName) {
         this.connected = false; // State of WS Connection to Beet
-        this.authenticated = false; // Whether this app has identified itself to Beet 
+        this.authenticated = false; // Whether this app has identified itself to Beet
         this.linked = false; // Whether this app has linked itself to a Beet account/id
         this.initialised = true; // Whether this client has been initialised (app name & domain/origin set)
         this.socket = null; // Holds the ws connection
@@ -549,9 +549,9 @@ class BeetConnection {
         return this.connected;
     }
 
-    getBitShares(bitshares) {
+    getBitShares(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
-        let add_signer_op = function add_signer(private_key, public_key) {
+        TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
             if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
                 throw new Error("Do not inject wif while using Beet")
             }
@@ -560,7 +560,7 @@ class BeetConnection {
             }
             this.signer_public_keys.push(public_key);
         };
-        let sign_op = function sign(chain_id = null) {
+        TransactionBuilder.prototype.sign = function sign(chain_id = null) {
             // do nothing, wait for broadcast
             if (!this.tr_buffer) {
                 throw new Error("not finalized");
@@ -588,8 +588,8 @@ class BeetConnection {
                 });
             });
         };
-        let broadcaast_op = function broadcast(was_broadcast_callback) {
-            return new Promise((resolve, reject) => {
+        TransactionBuilder.prototype.broadcast = function broadcast(was_broadcast_callback) {
+            return  new Promise((resolve, reject) => {
                 // forward to beet
                 if (this.tr_buffer) {
                     send_to_beet(this.tr_buffer, this.signer_public_keys).then(
@@ -618,6 +618,7 @@ class BeetConnection {
                 }
             });
         }
+        return TransactionBuilder;
     }
 
     getSteem(steem) {
