@@ -6,29 +6,84 @@ import "isomorphic-fetch";
 import {
     ec as EC
 } from "elliptic";
-var ec = new EC('curve25519');
+let ec = new EC('curve25519');
+
+
+let SSL_HOST = 'wss://local.get-beet.io:60556';
+let LOCAL_HOST = 'ws://local.get-beet.io:60555';
+let allowFallback = true;
+let getWebSocketConnection = function (onopen = null, onmessage = null, onclose = null, onerror = null) {
+    let host = SSL_HOST;
+    let next = LOCAL_HOST;
+
+    let _connect = function (host, next) {
+        return new Promise((resolve, reject) => {
+            let socket = new WebSocket(host);
+            socket.onerror = function (event) {
+                // only fallback for an error on first initialisation
+                if (allowFallback && event.timeStamp < 2000 && next !== null) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    console.log("Falling back to localhost socket", event);
+                    _connect(next, null).then(socket => {
+                        resolve(socket);
+                    }).catch(reject);
+                } else if (onerror != null) {
+                    onerror(event, socket);
+                }
+            };
+            socket.onopen = function (event) {
+                resolve(socket);
+                if (onopen !== null) {
+                    onopen(event, socket);
+                }
+            };
+            socket.onclose = function (event) {
+                if (onclose !== null) {
+                    onclose(event, socket);
+                }
+            };
+            socket.onmessage = function (event) {
+                if (onmessage !== null) {
+                    onmessage(event, socket);
+                }
+            };
+        });
+    };
+    return _connect(host, next);
+};
+
 
 class BeetJS {
 
     constructor() {
         this._beetAppInstances = {};
-        this.host = 'wss://local.get-beet.io:60556';
+    }
+
+    allowLocalhost() {
+        allowFallback = true;
     }
 
     /**
-     * Gets an instance of a beet connected application, if a chain selector is provided does the identity handling as well
-     * @param appName
-     * @returns {Promise<*>}
+     * Gets an instance of a beet connected application, if a chain selector is provided does the identity handling as well.
+     *      *
+     * @param String appName The name of the application that wants to connect to beet
+     * @param String or List chainSelector A string, or list of strings giving the chains the app wants an identity of
+     * @returns Depending on arguments.
+     *             - chainSelector == null: Returns the beet instance for this application
+     *             - chainSelector !== null: Returns a dict with following keys: 'beet' contains the beet instance
+     *                                       for this application, and one key for each entry in chainSelector, which
+     *                                       contains the beet connection for that identity
      */
     async get(appName, chainSelector = null) {
-        let _beet = null;
+        let _beetConnectedApp = null;
         if (this._beetAppInstances[appName]) {
-            _beet = this._beetAppInstances[appName];
+            _beetConnectedApp = this._beetAppInstances[appName];
         } else {
             let appInstance = new BeetApp(appName);
             await appInstance.init();
             this._beetAppInstances[appName] = appInstance;
-            _beet = this._beetAppInstances[appName];
+            _beetConnectedApp = this._beetAppInstances[appName];
         }
         if (chainSelector != null) {
             if (typeof chainSelector == "string") {
@@ -38,22 +93,23 @@ class BeetJS {
                 throw "chainSelector must be null, a string or list of strings"
             }
             // get already saved identities
-            let identities = await _beet.list();
+            let identities = await _beetConnectedApp.list();
 
-            let returnValue = {beet: _beet};
+            let returnValue = {beet: _beetConnectedApp};
             for (let idx in chainSelector) {
                 let chain = chainSelector[idx];
                 let identity = identities.find(_id => {
                     return _id.chain == chain;
                 });
-                console.log(chain, identity)
                 if (!!identity) {
-                    returnValue[chain] = await _beet.getConnection(identity);
+                    returnValue[chain] = await _beetConnectedApp.getConnection(identity);
                 } else {
-                    returnValue[chain] = await _beet.getChainConnection(chain, true);
+                    returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, true);
                 }
             }
             return returnValue;
+        } else {
+            return _beetConnectedApp;
         }
     }
 
@@ -63,27 +119,20 @@ class BeetJS {
      * @returns {Promise} Resolves to the installed version of Beet
      */
     ping() {
-        let ping;
-        return new Promise(async (resolve, reject) => {
-            try {
-                ping = new WebSocket(this.host);
-                ping.onopen = function (evt) {
-                    ping.send('{ "type" : "version"}');
+        return getWebSocketConnection(
+            function (event, socket) {
+                socket.send('{ "type" : "version"}');
+            },
+            function (event, socket) {
+                let msg = JSON.parse(event.data);
+                if (msg.type == "version") {
+                    resolve(msg.result);
+                } else {
+                    reject(false);
                 }
-                ping.onmessage = function (evt) {
-                    let msg = JSON.parse(evt.data);
-                    if (msg.type == "version") {
-                        resolve(msg.result);
-                    } else {
-                        reject(false);
-                    }
-                    ping.close();
-                }
-            } catch (e) {
-                reject(false);
+                socket.close();
             }
-        });
-
+        );
     }
 
     /**
@@ -106,7 +155,6 @@ class BeetJS {
 }
 class BeetApp {
 
-
     constructor(appName) {
         this.appName = appName;
         this.origin = appName; // FIXME put in actual origin
@@ -119,13 +167,16 @@ class BeetApp {
         this.appHash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName).toString();
 
     }
+
     async init() {
         this.appstore = await BeetClientDB.apps.where("apphash").equals(this.appHash).toArray();
         this._beetConnections = {};
     }
+
     list() {
         return this.appstore;
     }
+
     async getConnection(identity) {
         if (this._beetConnections[identity.identityhash]) {
             return this._beetConnections[identity.identityhash];
@@ -141,6 +192,7 @@ class BeetApp {
             }
         }
     }
+
     async getChainConnection(chainType, existing = true) {
         if (existing) {
             let compatibleIdentities = this.appstore.filter(id => {
@@ -200,7 +252,6 @@ class BeetApp {
 class BeetConnection {
 
     constructor(appName) {
-        this.host = 'wss://local.get-beet.io:60556';
         this.connected = false; // State of WS Connection to Beet
         this.authenticated = false; // Whether this app has identified itself to Beet 
         this.linked = false; // Whether this app has linked itself to a Beet account/id
@@ -340,18 +391,18 @@ class BeetConnection {
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
     async connect(identity = null, options) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             if (!this.initialised) throw new Error("You must initialise the Beet Client first via init(appName).");
 
             // Setting options defaults
             this.options = Object.assign({
-                initTimeout: 10000,
+                initTimeout: 3000,
                 linkTimeout: 30000
             }, options);
 
             // Auto failer
             setTimeout(() => {
-                resolve(false);
+                reject("Connection has timed out.");
             }, this.options.initTimeout);
 
             let authobj;
@@ -370,10 +421,9 @@ class BeetConnection {
                     browser: this.detected.name,
                 };
             }
-            this.socket = new WebSocket(this.host);
-            this.socket.onopen = async (evt) => {
+            let onopen = async () => {
                 this.connected = true;
-                var auth = this.sendRequest('authenticate', authobj);
+                let auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
                     console.log("connect", res);
                     this.authenticated = res.authenticate;
@@ -393,19 +443,13 @@ class BeetConnection {
                     }
                     console.log(this.identity.secret);
                     resolve(res);
-
                 }).catch(rej => {
                     resolve(rej);
                 });
-            }
-            this.socket.onclose = function (evt) {
-
-                this.connected = false;
-                this.socket = null;
-            }
-            this.socket.onmessage = async (evt) => {
-                console.log("socket.onmessage", evt);
-                let msg = JSON.parse(evt.data);
+            };
+            let onmessage = async (event) => {
+                console.log("socket.onmessage", event);
+                let msg = JSON.parse(event.data);
                 const openRequest = this.openRequests.find(
                     (x) => {
                         return x.id === msg.id || x.id.toString() === msg.id
@@ -431,7 +475,7 @@ class BeetConnection {
                     if (msg.encrypted) {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
-                        var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
+                        let response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
                         console.log("otp key generated", this.otp.counter);
                         console.log("socket.onmessage payload", response);
                         openRequest.resolve(response);
@@ -439,8 +483,18 @@ class BeetConnection {
                         openRequest.resolve(msg.payload);
                     }
                 }
-            }
-
+            };
+            let onclose = function () {
+                this.connected = false;
+                this.socket = null;
+            };
+            getWebSocketConnection(
+                onopen.bind(this),
+                onmessage.bind(this),
+                onclose.bind(this)
+            ).then(socket => {
+                this.socket = socket;
+            }).catch(reject);
         })
     }
 
