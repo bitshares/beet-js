@@ -2,5 +2,7 @@
 <script>
 beet.get("My App", "BTS").then( async app => {
     console.log(app.BTS);
+}).catch(err => {
+    console.error(err);
 });
 </script>
