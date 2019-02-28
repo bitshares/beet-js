@@ -75,7 +75,7 @@ class BeetJS {
      *                                       for this application, and one key for each entry in chainSelector, which
      *                                       contains the beet connection for that identity
      */
-    async get(appName, chainSelector = null) {
+    async get(appName, chainSelector = null, forceToChoose = false) {
         let _beetConnectedApp = null;
         if (this._beetAppInstances[appName]) {
             _beetConnectedApp = this._beetAppInstances[appName];
@@ -98,13 +98,18 @@ class BeetJS {
             let returnValue = {beet: _beetConnectedApp};
             for (let idx in chainSelector) {
                 let chain = chainSelector[idx];
-                let identity = identities.find(_id => {
-                    return _id.chain == chain || chain == 'ANY';
-                });
-                if (!!identity) {
-                    returnValue[chain] = await _beetConnectedApp.getConnection(identity);
+
+                if (forceToChoose) {
+                    returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, false);
                 } else {
-                    returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, true);
+                    let identity = identities.find(_id => {
+                        return _id.chain == chain || chain == 'ANY';
+                    });
+                    if (!!identity) {
+                        returnValue[chain] = await _beetConnectedApp.getConnection(identity);
+                    } else {
+                        returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, true);
+                    }
                 }
             }
             return returnValue;
@@ -351,6 +356,7 @@ class BeetConnection {
             }
             var link = this.sendRequest('link', linkobj);
             link.then(async res => {
+                console.log("link result", res)
                 this.chain = res.chain;
                 if (res.existing) {
                     this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
