@@ -63,19 +63,26 @@ class BeetJS {
     allowLocalhost() {
         allowFallback = true;
     }
-
+    async get(appName) {
+        if (this._beetAppInstances[appName]) {
+            return this._beetAppInstances[appName];
+        } else {
+            let appInstance = new BeetApp(appName);
+            await appInstance.init();
+            this._beetAppInstances[appName] = appInstance;
+            return this._beetAppInstances[appName];
+        }
+    }
     /**
-     * Gets an instance of a beet connected application, if a chain selector is provided does the identity handling as well.
+     * Gets an instance of a beet connected application, and does the identity handling for the chain or chains provided.
      *      *
      * @param String appName The name of the application that wants to connect to beet
      * @param String or List chainSelector A string, or list of strings giving the chains the app wants an identity of
-     * @returns Depending on arguments.
-     *             - chainSelector == null: Returns the beet instance for this application
-     *             - chainSelector !== null: Returns a dict with following keys: 'beet' contains the beet instance
-     *                                       for this application, and one key for each entry in chainSelector, which
-     *                                       contains the beet connection for that identity
+     * @returns Returns a dict with following keys: 'beet' contains the beet instance for this application,
+     *           and one key for each entry in chainSelector, which contains the beet connection for that identity
      */
-    async get(appName, chainSelector = null, forceToChoose = false) {
+
+    async quickConnect(appName, chainSelector, forceToChoose = false) {
         let _beetConnectedApp = null;
         if (this._beetAppInstances[appName]) {
             _beetConnectedApp = this._beetAppInstances[appName];
@@ -85,37 +92,25 @@ class BeetJS {
             this._beetAppInstances[appName] = appInstance;
             _beetConnectedApp = this._beetAppInstances[appName];
         }
-        if (chainSelector != null) {
-            if (typeof chainSelector == "string") {
-                chainSelector = [chainSelector]
-            }
-            if (typeof chainSelector !== "object" && chainSelector.length > 0 && typeof chainSelector[0] == "string" ) {
-                throw "chainSelector must be null, a string or list of strings"
-            }
-            // get already saved identities
-            let identities = await _beetConnectedApp.list();
-
-            let returnValue = {beet: _beetConnectedApp};
-            for (let idx in chainSelector) {
-                let chain = chainSelector[idx];
-
-                if (forceToChoose) {
-                    returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, false);
-                } else {
-                    let identity = identities.find(_id => {
-                        return _id.chain == chain || chain == 'ANY';
-                    });
-                    if (!!identity) {
-                        returnValue[chain] = await _beetConnectedApp.getConnection(identity);
-                    } else {
-                        returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, true);
-                    }
-                }
-            }
-            return returnValue;
-        } else {
-            return _beetConnectedApp;
+        
+        if (typeof chainSelector == "string") {
+            chainSelector = [chainSelector]
         }
+        if (typeof chainSelector !== "object" && chainSelector.length > 0 && typeof chainSelector[0] == "string" ) {
+            throw "chainSelector must be null, a string or list of strings"
+        }
+
+        let returnValue = {beet: _beetConnectedApp};
+        for (let idx in chainSelector) {
+            let chain = chainSelector[idx];
+            if (chain=='ANY') {
+                returnValue[chain]=await _beetConnectedApp.getAnyConnection(!forceToChoose);                
+            }else{
+                returnValue[chain]=await _beetConnectedApp.getChainConnection(chain, !forceToChoose);
+            }
+        }
+        return returnValue;
+        
     }
 
     /**
@@ -201,7 +196,7 @@ class BeetApp {
     async getChainConnection(chainType, existing = true) {
         if (existing) {
             let compatibleIdentities = this.appstore.filter(id => {
-                return id.chain == chainType || chainType == 'ANY'
+                return id.chain == chainType 
             });
             if (compatibleIdentities.length > 0) {
                 try {
@@ -359,7 +354,7 @@ class BeetConnection {
                 console.log("link result", res)
                 this.chain = res.chain;
                 if (res.existing) {
-                    this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
+                    this.identityhash = res.identityhash;
                     try {
                         this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();                                            
                         this.authenticated = res.authenticate;
@@ -379,11 +374,10 @@ class BeetConnection {
                         throw new Error('Beet has an established identity but client does not.');
                     }
                 }else{
-                    this.identityhash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName + ' ' + this.chain + ' ' + res.account_id).toString();
+                    this.identityhash = res.identityhash;
                     this.appstore = await BeetClientDB.apps.add({
                         apphash: this.apphash,
-                        identityhash: this.identityhash,
-                        account_id: res.account_id,
+                        identityhash: this.identityhash,                        
                         chain: this.chain,
                         appName: this.appName,
                         secret: this.secret.toString('hex'),
