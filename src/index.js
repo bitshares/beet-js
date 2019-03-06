@@ -279,6 +279,7 @@ class BeetConnection {
         }
         this.detected = browser();
         this.apphash = CryptoJS.SHA256(this.detected.name + ' ' + this.origin + ' ' + this.appName).toString();
+
     }
 
     reset() {
@@ -336,7 +337,10 @@ class BeetConnection {
      * @param {String} chain Symbol of the chain to be linked
      * @returns {Promise} Resolves to false if not linked after timeout, or to result of 'link' Beet call
      */
-    async link(chain = null) {
+    async link(chain = null, requestDetails = null) {
+        if (requestDetails == null) {
+            requestDetails = ["account"];
+        }
         return new Promise(async (resolve, reject) => {
             if (!this.connected) throw new Error("You must connect to Beet first.");
             if (!this.initialised) throw new Error("You must initialise the Beet Client first via init(appName).");
@@ -352,6 +356,7 @@ class BeetConnection {
             var next_hash = await CryptoJS.SHA256('' + next_id);
             let linkobj = {
                 chain: this.chain,
+                request: requestDetails,
                 pubkey: pubkey,
                 next_hash: next_hash.toString()
             }
@@ -378,6 +383,7 @@ class BeetConnection {
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
                         console.log("otp instantiated", this.identity.secret.toString());
+                        this.identity = Object.assign(this.identity, res.requested);
                         resolve(this.identityhash);
                     } catch (e) {
                         throw new Error('Beet has an established identity but client does not.');
@@ -405,6 +411,8 @@ class BeetConnection {
                         secret: OTPAuth.Secret.fromHex(this.identity.secret)
                     });
                     console.log("otp instantiated", this.identity.secret.toString());
+
+                    this.identity = Object.assign(this.identity, res.requested);
                     resolve(this.identityhash);
                 }
             }).catch(rej => {
@@ -469,6 +477,7 @@ class BeetConnection {
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
                         console.log("otp instantiated", this.identity.secret.toString());
+                        this.identity = Object.assign(this.identity, res.requested);
                     } else {
                         this.beetkey = res.pub_key;
                     }
