@@ -1,41 +1,47 @@
 <script src="dist/beet-js.js"></script>
+<script src="bitsharesjs.js"></script>
 <script>
-beet.init('My App').then(identities => {
-    try {
-        console.log(identities);
-        if (identities.length == 0) {
-            beet.connect().then(res => {
-                beet.link('BTS').then(res => {
-                    console.log("link", beet.getAccount());
+TransactionBuilder = beet.getBitShares(bitshares_js.TransactionBuilder);
 
-                    // comment this back in to debug id mismatch
-
-                    // beet.voteFor({id: '1.14.159'}).then(account => {
-                    //     console.log("voteFor", account);
-                    // }).catch((err) => {
-                    //     console.error("voteFor", err);
-                    // });
-                }).catch((err) => {
-                    console.error(err);
-                });
+beet.initAndConnect('My App', 'BTS').then(res => {
+    bitshares_js.bitshares_ws.Apis.instance(
+        "wss://eu.nodes.bitshares.ws",
+        true,
+        10000,
+        {enableCrypto: false, enableOrders: false},
+        (err) => console.log(err)
+    ).init_promise.then(() => {
+        try {
+            console.log(res);
+            let  tr = new TransactionBuilder();
+            let transfer_op = tr.get_type_operation("transfer", {
+                fee: {
+                    amount: 0,
+                    asset_id: "1.3.0"
+                },
+                from: "1.2.200",
+                to: "1.2.250",
+                amount: {amount: 1000, asset_id: "1.3.0"},
+                memo: undefined
+            });
+            tr.add_operation(
+                transfer_op
+            );
+            Promise.all([
+                tr.set_required_fees(),
+                tr.update_head_block()
+            ]).then(() => {
+                tr.add_signer("inject_wif", "BTS5ur776qN4bWBUaRarFcaUcjQr7qAEzCCeoCVTZPuZqaGJEUjTc");
+                tr.broadcast();
             }).catch((err) => {
                 console.error(err);
-            });
-        } else {
-            beet.connect(identities[0]).then(res => {
-                console.log("connected", res);
-                beet.voteFor({id: '1.14.159'}).then(account => {
-                    console.log("voteFor", account);
-                }).catch((err) => {
-                    console.error("voteFor", err);
-                });
-            }).catch((err) => {
-                console.error(err);
-            });
+            });;
+        } catch (err) {
+            console.error(err);
         }
-    } catch (err) {
-        console.error(err);
-    }
+    }).catch((err) => {
+        console.log(err);
+    });
 }).catch((err) => {
     console.error(err);
 });
