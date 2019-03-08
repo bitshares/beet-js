@@ -1,5 +1,4 @@
 import BeetApp from "./lib/BeetApp";
-import "isomorphic-fetch";
 import {allowFallback as _allowFallback, getWebSocketConnection} from "./lib/socket";
 
 

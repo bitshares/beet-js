@@ -1,5 +1,6 @@
-import browser from "browser-detect";
 import CryptoJS from "crypto-js";
+import browser from 'browser-detect';
+import "isomorphic-fetch";
 import BeetClientDB from "./BeetClientDB";
 import BeetConnection from "./BeetConnection";
 
@@ -37,7 +38,7 @@ class BeetApp {
                 this._beetConnections[identity.identityhash] = beetConnection;
                 return this._beetConnections[identity.identityhash];
             } catch (err) {
-                throw new Error(err);
+                throw err;
                 // TODO: if linking error, re-link transparently instead
             }
         }
@@ -60,14 +61,10 @@ class BeetApp {
             }
         } else {
             let beetConnection = new BeetConnection(this.appName);
-            try {
-                let isReady = await beetConnection.connect();
-                let identityhash = await beetConnection.link(chainType);
-                this._beetConnections[identityhash] = beetConnection;
-                return this._beetConnections[identityhash];
-            } catch (err) {
-                throw new Error(err);
-            }
+            let isReady = await beetConnection.connect();
+            let identityhash = await beetConnection.link(chainType);
+            this._beetConnections[identityhash] = beetConnection;
+            return this._beetConnections[identityhash];
         }
     }
 
@@ -86,15 +83,11 @@ class BeetApp {
             }
         } else {
             let beetConnection = new BeetConnection(this.appName);
-            try {
-                let isReady = await beetConnection.connect();
-                let identityhash = await beetConnection.link(); // Need to modify link to allow for no chain preference
+            let isReady = await beetConnection.connect();
+            let identityhash = await beetConnection.link(); // Need to modify link to allow for no chain preference
 
-                this._beetConnections[identityhash] = beetConnection;
-                return this._beetConnections[identityhash];
-            } catch (err) {
-                throw new Error(err);
-            }
+            this._beetConnections[identityhash] = beetConnection;
+            return this._beetConnections[identityhash];
         }
     }
 }

@@ -1,8 +1,15 @@
-import browser from "browser-detect";
+const OTPAuth = require('otpauth');
 import CryptoJS from "crypto-js";
-import BeetClientDB from "./BeetClientDB";
+import browser from 'browser-detect';
+import BeetClientDB from './BeetClientDB';
+import "isomorphic-fetch";
+import {
+    ec as EC
+} from "elliptic";
+let ec = new EC('curve25519');
+
 import {getWebSocketConnection} from "./socket";
-import OTPAuth from "otpauth";
+
 
 class BeetConnection {
 
@@ -111,15 +118,16 @@ class BeetConnection {
             }
             var link = this.sendRequest('link', linkobj);
             link.then(async res => {
-                console.log("link result", res)
+                console.groupCollapsed("link response");
+                console.log(res);
                 this.chain = res.chain;
                 if (res.existing) {
                     this.identityhash = res.identityhash;
                     try {
                         this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();
+                        console.debug("app fetched", this.identity);
                         this.authenticated = res.authenticate;
                         this.linked = res.link;
-
                         this.otp = new OTPAuth.HOTP({
                             issuer: "Beet",
                             label: "BeetAuth",
@@ -128,8 +136,8 @@ class BeetConnection {
                             counter: 0,
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
-                        console.log("otp instantiated", this.identity.secret.toString());
                         this.identity = Object.assign(this.identity, res.requested);
+                        console.groupEnd();
                         resolve(this.identityhash);
                     } catch (e) {
                         throw new Error('Beet has an established identity but client does not.');
@@ -147,7 +155,7 @@ class BeetConnection {
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
                     this.identity = await BeetClientDB.apps.where("identityhash").equals(this.identityhash).first();
-
+                    console.debug("app fetched", this.identity);
                     this.otp = new OTPAuth.HOTP({
                         issuer: "Beet",
                         label: "BeetAuth",
@@ -156,12 +164,12 @@ class BeetConnection {
                         counter: 0,
                         secret: OTPAuth.Secret.fromHex(this.identity.secret)
                     });
-                    console.log("otp instantiated", this.identity.secret.toString());
-
                     this.identity = Object.assign(this.identity, res.requested);
+                    console.groupEnd();
                     resolve(this.identityhash);
                 }
             }).catch(rej => {
+                console.debug("link rejected", rej);
                 reject(rej);
             });
         });
@@ -190,7 +198,7 @@ class BeetConnection {
                 reject("Connection has timed out.");
             }, this.options.initTimeout);
 
-            let authobj;
+            let authobj = null;
             if (identity != null) {
                 this.identity = identity;
                 authobj = {
@@ -210,7 +218,8 @@ class BeetConnection {
                 this.connected = true;
                 let auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
-                    console.log("connect", res);
+                    console.groupCollapsed("socket.onopen authenticate");
+                    console.log(event);
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
                     if (this.linked) {
@@ -222,19 +231,21 @@ class BeetConnection {
                             counter: 0,
                             secret: OTPAuth.Secret.fromHex(this.identity.secret)
                         });
-                        console.log("otp instantiated", this.identity.secret.toString());
+                        console.debug("otp instantiated", this.identity.secret.toString());
                         this.identity = Object.assign(this.identity, res.requested);
                     } else {
                         this.beetkey = res.pub_key;
                     }
-                    console.log(this.identity.secret);
+                    console.groupEnd();
                     resolve(res);
                 }).catch(rej => {
-                    resolve(rej);
+                    console.info("socket.onopen authenticate rejected", rej);
+                    reject(rej);
                 });
             };
             let onmessage = async (event) => {
-                console.log("socket.onmessage", event);
+                console.groupCollapsed("socket.onmessage");
+                console.log(event);
                 let msg = JSON.parse(event.data);
                 const openRequest = this.openRequests.find(
                     (x) => {
@@ -247,8 +258,8 @@ class BeetConnection {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
                         var response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
-                        console.log("otp key generated", this.otp.counter);
-                        console.log("socket.onmessage payload", response);
+                        console.debug("otp key generated", this.otp.counter);
+                        console.debug("socket.onmessage decrypted payload", response);
                         openRequest.reject(response);
                     } else {
                         openRequest.reject(msg.payload.message);
@@ -262,13 +273,14 @@ class BeetConnection {
                         this.otp.counter = msg.id;
                         let key = this.otp.generate();
                         let response = CryptoJS.AES.decrypt(msg.payload, key).toString(CryptoJS.enc.Utf8);
-                        console.log("otp key generated", this.otp.counter);
-                        console.log("socket.onmessage payload", response);
+                        console.debug("otp key generated", this.otp.counter);
+                        console.debug("socket.onmessage decrypted payload", response);
                         openRequest.resolve(response);
                     } else {
                         openRequest.resolve(msg.payload);
                     }
                 }
+                console.groupEnd();
             };
             let onclose = function () {
                 this.connected = false;
@@ -292,8 +304,9 @@ class BeetConnection {
      * @returns {Promise} Resolving is done by Beet
      */
     async sendRequest(type, payload) {
-        console.log("sendRequest", type, payload);
         return new Promise(async (resolve, reject) => {
+            console.groupCollapsed("sendRequest");
+            console.log(type, payload);
             let request = {}
             request.type = type;
             if (type == 'api') {
@@ -302,8 +315,8 @@ class BeetConnection {
                 request.id = ids.id;
                 this.otp.counter = request.id;
                 let key = this.otp.generate();
-                console.log("otp key generated", this.otp.counter);
-                console.log("sendRequest payload", payload);
+                console.debug("otp key generated", this.otp.counter);
+                console.debug("sendRequest payload", payload);
                 request.payload = CryptoJS.AES.encrypt(JSON.stringify(payload), key).toString();
             } else {
                 request.id = await this.generate_id();
@@ -314,7 +327,7 @@ class BeetConnection {
                 reject
             }));
             this.socket.send(JSON.stringify(request));
-            console.log('sendRequest dispatched', request);
+            console.groupEnd();
         });
     }
 
@@ -384,7 +397,6 @@ class BeetConnection {
             this.signed = true;
         };
         let send_to_beet = function sendToBeet(builder) {
-            console.log(builder);
             return new Promise((resolve, reject) => {
                 if (builder.operations_to_send.length != builder.operations.length) {
                     throw "Serialized and constructed operation count differs"
