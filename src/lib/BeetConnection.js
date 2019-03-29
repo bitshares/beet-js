@@ -214,7 +214,7 @@ class BeetConnection {
                     browser: this.detected.name,
                 };
             }
-            let onopen = async () => {
+            let onopen = async (event) => {
                 this.connected = true;
                 let auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
@@ -282,7 +282,7 @@ class BeetConnection {
                 }
                 console.groupEnd();
             };
-            let onclose = function () {
+            let onclose = function (event) {
                 this.connected = false;
                 this.socket = null;
             };
