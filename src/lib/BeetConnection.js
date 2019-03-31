@@ -90,7 +90,7 @@ class BeetConnection {
      * @param {String} chain Symbol of the chain to be linked
      * @returns {Promise} Resolves to false if not linked after timeout, or to result of 'link' Beet call
      */
-    async link(chain = null, requestDetails = null) {
+    async link(chain = null, requestDetails = null,missingid=null) {
         if (requestDetails == null) {
             requestDetails = ["account"];
         }
@@ -116,7 +116,13 @@ class BeetConnection {
             if (this.chain == null) {
                 linkobj.chain = 'ANY'
             }
-            var link = this.sendRequest('link', linkobj);
+            var link;
+            if (missingid==null) {
+                link = this.sendRequest('link', linkobj);
+            }else{
+                linkobj.identityhash=missingid;
+                link = this.sendRequest('relink', linkobj);
+            }
             link.then(async res => {
                 console.groupCollapsed("link response");
                 console.log(res);
@@ -140,7 +146,7 @@ class BeetConnection {
                         console.groupEnd();
                         resolve(this.identityhash);
                     } catch (e) {
-                        throw new Error('Beet has an established identity but client does not.');
+                        this.link(chain, requestDetails, res.identityhash);
                     }
                 } else {
                     this.identityhash = res.identityhash;
@@ -355,7 +361,7 @@ class BeetConnection {
                 return this.injectTransactionBuilder(pointOfInjection);
             }
         } else if (this.identity.chain == "STEEM") {
-            if (!!pointOfInjection.broadcast) {
+            if (pointOfInjection.broadcast) {
                 return this.injectSteemLib(pointOfInjection);
             }
         }
@@ -417,7 +423,7 @@ class BeetConnection {
                 // forward to beet
                 send_to_beet(this).then(
                     result => {
-                        if (!!was_broadcast_callback) {
+                        if (was_broadcast_callback) {
                             was_broadcast_callback();
                         }
                         resolve(result);
