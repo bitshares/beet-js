@@ -146,7 +146,13 @@ class BeetConnection {
                         console.groupEnd();
                         resolve(this.identityhash);
                     } catch (e) {
-                        this.link(chain, requestDetails, res.identityhash);
+                        console.groupEnd();
+                        try {
+                            let relink= await this.link(chain, requestDetails, res.identityhash);
+                            resolve(relink);
+                        }catch(e){
+                            reject(e);
+                        }
                     }
                 } else {
                     this.identityhash = res.identityhash;
