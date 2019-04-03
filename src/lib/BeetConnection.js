@@ -358,9 +358,62 @@ class BeetConnection {
             if (!!pointOfInjection.broadcast) {
                 return this.injectSteemLib(pointOfInjection);
             }
+        } else if (this.identity.chain == "BNB") {
+            if (!!pointOfInjection.placeOrder) {
+                return this.injectBinanceLib(pointOfInjection);
+            }
         }
         throw new Error("Unsupported point of injection")
     }
+
+    injectBinanceLib(binancejs) {
+        let sendRequest = this.sendRequest.bind(this);
+        const original = {
+            placeOrder: binancejs.placeOrder,
+            cancelOrder: binancejs.cancelOrder,
+            transfer: binancejs.transfer,
+        }
+        binancejs.transfer = function (fromAddress, toAddress, amount, asset, memo, sequence) {
+            return new Promise((resolve, reject) => {
+                let args = ["transfer", "inject_wif", fromAddress, toAddress, amount, asset, memo, sequence];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        }
+        binancejs.cancelOrder = function (fromAddress, symbol, refid, sequence) {
+            return new Promise((resolve, reject) => {
+                let args = ["cancelOrder", "inject_wif", fromAddress, symbol, refid, sequence];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        }
+        binancejs.placeOrder = function (address, symbol, side, price, quantity, sequence, timeinforce) {
+            return new Promise((resolve, reject) => {
+                let args = ["placeOrder", "inject_wif", address, symbol, side, price, quantity, sequence, timeinforce];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        }
+    }
+
 
     injectTransactionBuilder(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
