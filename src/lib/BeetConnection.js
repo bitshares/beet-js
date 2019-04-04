@@ -626,6 +626,19 @@ class BeetConnection {
             });
         })
     }
+
+    /**
+     * Requests to execute a transfer for the linked chain
+     *
+     * @param payload
+     * @returns {Promise} Resolving is done by Beet
+     */
+    transfer(payload) {
+        return this.sendRequest('api', {
+            method: 'transfer',
+            params: payload
+        });
+    }
 }
 
 export default BeetConnection;

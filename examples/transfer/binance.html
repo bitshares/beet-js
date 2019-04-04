@@ -1,0 +1,22 @@
+<script src="../../dist/beet-js.js"></script>
+
+<script>
+beet.get("My Transfer App", "BNB", true).then( async app => {
+    app.BNB.transfer(
+        {
+            to: "tbnb1ems4j20fq6e24pjmqht7le78uteqp6nftexxn2",
+            amount:
+                {
+                    satoshis: 1,
+                    asset_id: "BNB"
+                }
+        }
+    ).then(result => {
+        console.log("Success", result);
+    }).catch(err => {
+        console.error(err);
+    });
+}).catch(err => {
+    console.error(err);
+});
+</script>
