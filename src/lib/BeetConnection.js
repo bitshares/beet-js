@@ -439,7 +439,7 @@ class BeetConnection {
             return stringToTx(binancejs.client.__tx.default, signedTxString);
         };
         binancejs.setSigningDelegate(BeetSigningDelegate);
-        export const BeetBroadcastDelegate = async function(signedTx) {
+        const BeetBroadcastDelegate = async function(signedTx) {
             let txString = txToString(signedTx);
             let args = ["broadcast", txString, signMsg];
             let broadcastTxString = await sendRequest('api', {
