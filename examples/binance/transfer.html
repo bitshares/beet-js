@@ -1,22 +1,23 @@
 <script src="../../dist/beet-js.js"></script>
 
 <script>
-beet.get("Binance Transfer Example", "BNB_TEST").then( async app => {
-    app.BNB_TEST.transfer(
-        {
-            to: "tbnb1ems4j20fq6e24pjmqht7le78uteqp6nftexxn2",
-            amount:
+    let init = async function() {
+        try {
+            let app = await beet.get("Binance Transfer Example", "BNB_TEST");
+            console.log("Linked account", app.BNB_TEST.getAccount());
+            await app.BNB_TEST.transfer(
                 {
-                    satoshis: 1000,
-                    asset_id: "BNB"
+                    to: "tbnb1ems4j20fq6e24pjmqht7le78uteqp6nftexxn2",
+                    amount:
+                        {
+                            satoshis: 1000,
+                            asset_id: "BNB"
+                        }
                 }
+            );
+        } catch (err) {
+            console.error(err);
         }
-    ).then(result => {
-        console.log("Success", result);
-    }).catch(err => {
-        console.error(err);
-    });
-}).catch(err => {
-    console.error(err);
-});
+    };
+    init();
 </script>

@@ -12,7 +12,6 @@ let ec = new EC('curve25519');
 
 import {getWebSocketConnection} from "./socket";
 
-
 class BeetConnection {
 
     constructor(appName) {
@@ -235,7 +234,7 @@ class BeetConnection {
                 this.connected = true;
                 let auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
-                    console.groupCollapsed("socket.onopen authenticate");
+                    console.groupCollapsed("authenticate"); // groupCollapsed
                     console.log(event);
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
@@ -256,12 +255,12 @@ class BeetConnection {
                     console.groupEnd();
                     resolve(res);
                 }).catch(rej => {
-                    console.info("socket.onopen authenticate rejected", rej);
+                    console.error("socket.onopen authenticate rejected", rej);
                     reject(rej);
                 });
             };
             let onmessage = async (event) => {
-                console.groupCollapsed("socket.onmessage");
+                console.log("socket.onmessage"); // groupCollapsed
                 console.log(event);
                 let msg = JSON.parse(event.data);
                 const openRequest = this.openRequests.find(
@@ -344,7 +343,7 @@ class BeetConnection {
                 reject
             }));
             this.socket.send(JSON.stringify(request));
-            console.groupEnd();
+            console.log("Waiting for response .."); // groupEnd
         });
     }
 
@@ -375,7 +374,7 @@ class BeetConnection {
             if (pointOfInjection.broadcast) {
                 return this.injectSteemLib(pointOfInjection);
             }
-        } else if (this.identity.chain == "BNB") {
+        } else if (this.identity.chain == "BNB_TEST") {
             if (!!pointOfInjection.placeOrder) {
                 return this.injectBinanceLib(pointOfInjection);
             }
@@ -450,9 +449,6 @@ class BeetConnection {
         }
         binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
     }
-
-
-
 
     injectTransactionBuilder(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
@@ -560,6 +556,14 @@ class BeetConnection {
      * @returns {Promise} Resolving is done by Beet
      */
     getAccount() {
+        if (!!this.identity.account) {
+            return this.identity.account;
+        } else {
+            throw "This connection does not have access to account details";
+        }
+    }
+
+    requestAccount() {
         return new Promise((resolve, reject) => {
             return this.sendRequest('api', {
                 method: 'getAccount',
@@ -569,8 +573,7 @@ class BeetConnection {
             }).catch(err => {
                 reject(err);
             });
-        })
-
+        });
     }
 
     /**
