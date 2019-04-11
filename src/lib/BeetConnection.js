@@ -364,25 +364,25 @@ class BeetConnection {
         return this.connected;
     }
 
-    inject(pointOfInjection) {
+    inject(pointOfInjection, options = {sign: true, broadcast: true}) {
         if (this.identity.chain == "BTS") {
             if (!!pointOfInjection.prototype && !!pointOfInjection.prototype.get_type_operation) {
                 // transaction builder
-                return this.injectTransactionBuilder(pointOfInjection);
+                return this.injectTransactionBuilder(pointOfInjection, options);
             }
         } else if (this.identity.chain == "STEEM") {
             if (pointOfInjection.broadcast) {
-                return this.injectSteemLib(pointOfInjection);
+                return this.injectSteemLib(pointOfInjection, options);
             }
         } else if (this.identity.chain == "BNB_TEST") {
             if (!!pointOfInjection.placeOrder) {
-                return this.injectBinanceLib(pointOfInjection);
+                return this.injectBinanceLib(pointOfInjection, options);
             }
         }
         throw new Error("Unsupported point of injection")
     }
 
-    injectBinanceLib(binancejs) {
+    injectBinanceLib(binancejs, options) {
         let sendRequest = this.sendRequest.bind(this);
         const original = {
             placeOrder: binancejs.placeOrder,
@@ -428,26 +428,30 @@ class BeetConnection {
                 });
             });
         };
-        const BeetSigningDelegate = async function (tx, signMsg) {
-            let txString = txToString(tx);
-            let args = ["sign", txString, signMsg];
-            let signedTxString = await sendRequest('api', {
-                method: 'injectedCall',
-                params: args
-            });
-            return stringToTx(binancejs.client.__tx.default, signedTxString);
-        };
-        binancejs.setSigningDelegate(BeetSigningDelegate);
-        const BeetBroadcastDelegate = async function(signedTx) {
-            let txString = txToString(signedTx);
-            let args = ["broadcast", txString, signMsg];
-            let broadcastTxString = await sendRequest('api', {
-                method: 'injectedCall',
-                params: args
-            });
-            return stringToTx(binancejs.client.__tx.default, broadcastTxString);
+        if (!!options.sign) {
+            const BeetSigningDelegate = async function (tx, signMsg) {
+                let txString = txToString(tx);
+                let args = ["sign", txString, signMsg];
+                let signedTxString = await sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                });
+                return stringToTx(binancejs.client.__tx.default, signedTxString);
+            };
+            binancejs.setSigningDelegate(BeetSigningDelegate);
         }
-        binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
+        if (!!options.broadcast) {
+            const BeetBroadcastDelegate = async function (signedTx) {
+                let txString = txToString(signedTx);
+                let args = ["broadcast", txString, signMsg];
+                let broadcastTxString = await sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                });
+                return stringToTx(binancejs.client.__tx.default, broadcastTxString);
+            };
+            binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
+        }
     }
 
     injectTransactionBuilder(TransactionBuilder) {
