@@ -389,7 +389,8 @@ class BeetConnection {
             cancelOrder: binancejs.cancelOrder,
             transfer: binancejs.transfer,
         };
-        binancejs.transfer = function (fromAddress, toAddress, amount, asset, memo, sequence) {
+        binancejs.beet = {};
+        binancejs.beet.transfer = function (fromAddress, toAddress, amount, asset, memo, sequence) {
             return new Promise((resolve, reject) => {
                 let args = ["transfer", "inject_wif", fromAddress, toAddress, amount, asset, memo, sequence];
                 sendRequest('api', {
@@ -402,7 +403,7 @@ class BeetConnection {
                 });
             });
         };
-        binancejs.cancelOrder = function (fromAddress, symbol, refid, sequence) {
+        binancejs.beet.cancelOrder = function (fromAddress, symbol, refid, sequence) {
             return new Promise((resolve, reject) => {
                 let args = ["cancelOrder", "inject_wif", fromAddress, symbol, refid, sequence];
                 sendRequest('api', {
@@ -415,7 +416,7 @@ class BeetConnection {
                 });
             });
         };
-        binancejs.placeOrder = function (address, symbol, side, price, quantity, sequence, timeinforce) {
+        binancejs.beet.placeOrder = function (address, symbol, side, price, quantity, sequence, timeinforce) {
             return new Promise((resolve, reject) => {
                 let args = ["placeOrder", "inject_wif", address, symbol, side, price, quantity, sequence, timeinforce];
                 sendRequest('api', {
@@ -430,8 +431,10 @@ class BeetConnection {
         };
         if (!!options.sign) {
             const BeetSigningDelegate = async function (tx, signMsg) {
+                tx.signMsg = signMsg;
+                return tx;
                 let txString = txToString(tx);
-                let args = ["sign", txString, signMsg];
+                let args = ["sign", txString, JSON.stringify(signMsg)];
                 let signedTxString = await sendRequest('api', {
                     method: 'injectedCall',
                     params: args
@@ -443,15 +446,16 @@ class BeetConnection {
         if (!!options.broadcast) {
             const BeetBroadcastDelegate = async function (signedTx) {
                 let txString = txToString(signedTx);
-                let args = ["broadcast", txString, signMsg];
+                let args = ["signAndBroadcast", txString, JSON.stringify(signedTx.signMsg)];
                 let broadcastTxString = await sendRequest('api', {
                     method: 'injectedCall',
                     params: args
                 });
-                return stringToTx(binancejs.client.__tx.default, broadcastTxString);
+                return JSON.parse(broadcastTxString);
             };
             binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
         }
+        return binancejs;
     }
 
     injectTransactionBuilder(TransactionBuilder) {
