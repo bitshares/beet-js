@@ -429,10 +429,8 @@ class BeetConnection {
                 });
             });
         };
-        if (!!options.sign) {
+        if (!!options.sign && !options.broadcast) {
             const BeetSigningDelegate = async function (tx, signMsg) {
-                tx.signMsg = signMsg;
-                return tx;
                 let txString = txToString(tx);
                 let args = ["sign", txString, JSON.stringify(signMsg)];
                 let signedTxString = await sendRequest('api', {
@@ -442,9 +440,15 @@ class BeetConnection {
                 return stringToTx(binancejs.client.__tx.default, signedTxString);
             };
             binancejs.setSigningDelegate(BeetSigningDelegate);
-        }
-        if (!!options.broadcast) {
+        } else if (!!options.sign && !!options.broadcast) {
+            // do both in broadcast request
+            const NothingSigningDelegate = async function (tx, signMsg) {
+                tx.signMsg = signMsg;
+                return tx;
+            };
+            binancejs.setSigningDelegate(NothingSigningDelegate);
             const BeetBroadcastDelegate = async function (signedTx) {
+                console.log("Using BeetBroadcastDelegate", signedTx);
                 let txString = txToString(signedTx);
                 let args = ["signAndBroadcast", txString, JSON.stringify(signedTx.signMsg)];
                 let broadcastTxString = await sendRequest('api', {
@@ -454,6 +458,8 @@ class BeetConnection {
                 return JSON.parse(broadcastTxString);
             };
             binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
+        } else {
+            throw "Unsupported injection options";
         }
         return binancejs;
     }
