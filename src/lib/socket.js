@@ -1,5 +1,5 @@
 let SSL_HOST = 'wss://local.get-beet.io:60556';
-let LOCAL_HOST = 'ws://local.get-beet.io:60555';
+let LOCAL_HOST = 'ws://localhost:60555';
 let _allowFallback = false;
 
 let getWebSocketConnection = function (onopen = null, onmessage = null, onclose = null, onerror = null) {

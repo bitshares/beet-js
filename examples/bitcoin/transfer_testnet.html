@@ -1,0 +1,24 @@
+<script src="../../dist/beet-js.js"></script>
+
+<script async>
+    // async example
+    let init = async function() {
+        try {
+            let app = await beet.get("BitCoin Testnet Transfer Example", "BTC_TEST");
+            console.log("Linked account", app.BTC_TEST.getAccount());
+            await app.BTC_TEST.transfer(
+                {
+                    to: "mvo4pmTWxXqk5i8xjRJFzQdHuuHeyL49Ph",
+                    amount:
+                        {
+                            satoshis: 100000,
+                            asset_id: "BTC"
+                        }
+                }
+            );
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    init();
+</script>

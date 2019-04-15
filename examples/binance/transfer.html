@@ -1,0 +1,23 @@
+<script src="../../dist/beet-js.js"></script>
+
+<script>
+    let init = async function() {
+        try {
+            let app = await beet.get("Binance Transfer Example", "BNB_TEST");
+            console.log("Linked account", app.BNB_TEST.getAccount());
+            await app.BNB_TEST.transfer(
+                {
+                    to: "tbnb1ems4j20fq6e24pjmqht7le78uteqp6nftexxn2",
+                    amount:
+                        {
+                            satoshis: 1000,
+                            asset_id: "BNB"
+                        }
+                }
+            );
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    init();
+</script>

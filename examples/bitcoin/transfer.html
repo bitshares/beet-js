@@ -1,0 +1,23 @@
+<script src="../../dist/beet-js.js"></script>
+
+<script>
+    // promise example
+    beet.get("BitCoin Transfer Example", "BTC").then(app => {
+        app.BTC.transfer(
+            {
+                to: "1Q7Dw4oG3G9RapwFQ3ZKmhG8HXBYsxNv7z",
+                amount:
+                    {
+                        satoshis: 100000,
+                        asset_id: "BTC"
+                    }
+            }
+        ).then(result => {
+            console.log("Success", result);
+        }).catch(err => {
+            console.error(err);
+        });
+    }).catch(err => {
+        console.error(err);
+    });
+</script>

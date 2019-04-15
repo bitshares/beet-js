@@ -1,3 +1,5 @@
+import {stringToTx, txToString} from "./blockchains/Binance";
+
 const OTPAuth = require('otpauth');
 import CryptoJS from "crypto-js";
 import browser from 'browser-detect';
@@ -9,7 +11,6 @@ import {
 let ec = new EC('curve25519');
 
 import {getWebSocketConnection} from "./socket";
-
 
 class BeetConnection {
 
@@ -88,9 +89,11 @@ class BeetConnection {
      * Requests to link to a Beet account/id on specified chain
      *
      * @param {String} chain Symbol of the chain to be linked
+     * @param {String} requestDetails Details to be requested from the user, defaults to account (id and name)
+     * @param {String} missingIdentityHash This initiates a relink, and pops up a special message in beet, use e.g. when client side cache gets lost
      * @returns {Promise} Resolves to false if not linked after timeout, or to result of 'link' Beet call
      */
-    async link(chain = null, requestDetails = null) {
+    async link(chain = null, requestDetails = null, missingIdentityHash=null) {
         if (requestDetails == null) {
             requestDetails = ["account"];
         }
@@ -116,7 +119,13 @@ class BeetConnection {
             if (this.chain == null) {
                 linkobj.chain = 'ANY'
             }
-            var link = this.sendRequest('link', linkobj);
+            var link;
+            if (missingIdentityHash == null) {
+                link = this.sendRequest('link', linkobj);
+            }else{
+                linkobj.identityhash = missingIdentityHash;
+                link = this.sendRequest('relink', linkobj);
+            }
             link.then(async res => {
                 console.groupCollapsed("link response");
                 console.log(res);
@@ -140,7 +149,14 @@ class BeetConnection {
                         console.groupEnd();
                         resolve(this.identityhash);
                     } catch (e) {
-                        throw new Error('Beet has an established identity but client does not.');
+                        console.warn("Beet has found an established identity, but the client does not know it, requesting relink ...");
+                        console.groupEnd();
+                        try {
+                            let relink = await this.link(chain, requestDetails, res.identityhash);
+                            resolve(relink);
+                        }catch(e){
+                            reject(e);
+                        }
                     }
                 } else {
                     this.identityhash = res.identityhash;
@@ -214,11 +230,11 @@ class BeetConnection {
                     browser: this.detected.name,
                 };
             }
-            let onopen = async () => {
+            let onopen = async (event) => {
                 this.connected = true;
                 let auth = this.sendRequest('authenticate', authobj);
                 auth.then(res => {
-                    console.groupCollapsed("socket.onopen authenticate");
+                    console.groupCollapsed("authenticate"); // groupCollapsed
                     console.log(event);
                     this.authenticated = res.authenticate;
                     this.linked = res.link;
@@ -239,12 +255,12 @@ class BeetConnection {
                     console.groupEnd();
                     resolve(res);
                 }).catch(rej => {
-                    console.info("socket.onopen authenticate rejected", rej);
+                    console.error("socket.onopen authenticate rejected", rej);
                     reject(rej);
                 });
             };
             let onmessage = async (event) => {
-                console.groupCollapsed("socket.onmessage");
+                console.log("socket.onmessage"); // groupCollapsed
                 console.log(event);
                 let msg = JSON.parse(event.data);
                 const openRequest = this.openRequests.find(
@@ -282,7 +298,7 @@ class BeetConnection {
                 }
                 console.groupEnd();
             };
-            let onclose = function () {
+            let onclose = function (event) {
                 this.connected = false;
                 this.socket = null;
             };
@@ -327,7 +343,7 @@ class BeetConnection {
                 reject
             }));
             this.socket.send(JSON.stringify(request));
-            console.groupEnd();
+            console.log("Waiting for response .."); // groupEnd
         });
     }
 
@@ -348,18 +364,104 @@ class BeetConnection {
         return this.connected;
     }
 
-    inject(pointOfInjection) {
+    inject(pointOfInjection, options = {sign: true, broadcast: true}) {
         if (this.identity.chain == "BTS") {
             if (!!pointOfInjection.prototype && !!pointOfInjection.prototype.get_type_operation) {
                 // transaction builder
-                return this.injectTransactionBuilder(pointOfInjection);
+                return this.injectTransactionBuilder(pointOfInjection, options);
             }
         } else if (this.identity.chain == "STEEM") {
-            if (!!pointOfInjection.broadcast) {
-                return this.injectSteemLib(pointOfInjection);
+            if (pointOfInjection.broadcast) {
+                return this.injectSteemLib(pointOfInjection, options);
+            }
+        } else if (this.identity.chain == "BNB_TEST") {
+            if (!!pointOfInjection.placeOrder) {
+                return this.injectBinanceLib(pointOfInjection, options);
             }
         }
         throw new Error("Unsupported point of injection")
+    }
+
+    injectBinanceLib(binancejs, options) {
+        let sendRequest = this.sendRequest.bind(this);
+        const original = {
+            placeOrder: binancejs.placeOrder,
+            cancelOrder: binancejs.cancelOrder,
+            transfer: binancejs.transfer,
+        };
+        binancejs.beet = {};
+        binancejs.beet.transfer = function (fromAddress, toAddress, amount, asset, memo, sequence) {
+            return new Promise((resolve, reject) => {
+                let args = ["transfer", "inject_wif", fromAddress, toAddress, amount, asset, memo, sequence];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        };
+        binancejs.beet.cancelOrder = function (fromAddress, symbol, refid, sequence) {
+            return new Promise((resolve, reject) => {
+                let args = ["cancelOrder", "inject_wif", fromAddress, symbol, refid, sequence];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        };
+        binancejs.beet.placeOrder = function (address, symbol, side, price, quantity, sequence, timeinforce) {
+            return new Promise((resolve, reject) => {
+                let args = ["placeOrder", "inject_wif", address, symbol, side, price, quantity, sequence, timeinforce];
+                sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                }).then((result) => {
+                    resolve(result);
+                }).catch((err) => {
+                    reject(err);
+                });
+            });
+        };
+        if (!!options.sign && !options.broadcast) {
+            const BeetSigningDelegate = async function (tx, signMsg) {
+                let txString = txToString(tx);
+                let args = ["sign", txString, JSON.stringify(signMsg)];
+                let signedTxString = await sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                });
+                return stringToTx(binancejs.client.__tx.default, signedTxString);
+            };
+            binancejs.setSigningDelegate(BeetSigningDelegate);
+        } else if (!!options.sign && !!options.broadcast) {
+            // do both in broadcast request
+            const NothingSigningDelegate = async function (tx, signMsg) {
+                tx.signMsg = signMsg;
+                return tx;
+            };
+            binancejs.setSigningDelegate(NothingSigningDelegate);
+            const BeetBroadcastDelegate = async function (signedTx) {
+                console.log("Using BeetBroadcastDelegate", signedTx);
+                let txString = txToString(signedTx);
+                let args = ["signAndBroadcast", txString, JSON.stringify(signedTx.signMsg)];
+                let broadcastTxString = await sendRequest('api', {
+                    method: 'injectedCall',
+                    params: args
+                });
+                return JSON.parse(broadcastTxString);
+            };
+            binancejs.setBroadcastDelegate(BeetBroadcastDelegate);
+        } else {
+            throw "Unsupported injection options";
+        }
+        return binancejs;
     }
 
     injectTransactionBuilder(TransactionBuilder) {
@@ -417,7 +519,7 @@ class BeetConnection {
                 // forward to beet
                 send_to_beet(this).then(
                     result => {
-                        if (!!was_broadcast_callback) {
+                        if (was_broadcast_callback) {
                             was_broadcast_callback();
                         }
                         resolve(result);
@@ -468,6 +570,14 @@ class BeetConnection {
      * @returns {Promise} Resolving is done by Beet
      */
     getAccount() {
+        if (!!this.identity.account) {
+            return this.identity.account;
+        } else {
+            throw "This connection does not have access to account details";
+        }
+    }
+
+    requestAccount() {
         return new Promise((resolve, reject) => {
             return this.sendRequest('api', {
                 method: 'getAccount',
@@ -477,8 +587,7 @@ class BeetConnection {
             }).catch(err => {
                 reject(err);
             });
-        })
-
+        });
     }
 
     /**
@@ -557,6 +666,19 @@ class BeetConnection {
                 reject(err);
             });
         })
+    }
+
+    /**
+     * Requests to execute a transfer for the linked chain
+     *
+     * @param payload
+     * @returns {Promise} Resolving is done by Beet
+     */
+    transfer(payload) {
+        return this.sendRequest('api', {
+            method: 'transfer',
+            params: payload
+        });
     }
 }
 
