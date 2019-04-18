@@ -1,5 +1,5 @@
 {
-  "name": "beet-js",
+  "name": "@beetapp/beet-js",
   "version": "0.5.1",
   "description": "Beet-js is the client lib for Beet, a stand-alone key-manager and signing app for BitShares.",
   "main": "index.js",
