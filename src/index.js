@@ -80,20 +80,22 @@ class BeetJS {
      * @returns {Promise} Resolves to the installed version of Beet
      */
     ping() {
-        return getWebSocketConnection(
-            function (event, socket) {
-                socket.send('{"type" : "version"}');
-            },
-            function (event, socket) {
-                let msg = JSON.parse(event.data);
-                if (msg.type == "version") {
-                    resolve(msg.result);
-                } else {
-                    reject(false);
+        return new Promise((resolve, reject) => {
+            getWebSocketConnection(
+                function (event, socket) {
+                    socket.send('{"type" : "version"}');
+                },
+                function (event, socket) {
+                    let msg = JSON.parse(event.data);
+                    if (msg.type == "version") {
+                        resolve(msg.result);
+                    } else {
+                        reject(false);
+                    }
+                    socket.close();
                 }
-                socket.close();
-            }
-        );
+            );
+        });
     }
 
     /**
