@@ -8,7 +8,12 @@
     "webpack": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "blockchain",
+    "cryptocurrency",
+    "keymanager",
+    "bitshares"
+  ],
   "author": "clockworkgr",
   "license": "MIT",
   "devDependencies": {
