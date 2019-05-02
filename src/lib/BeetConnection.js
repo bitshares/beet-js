@@ -467,13 +467,6 @@ class BeetConnection {
     injectTransactionBuilder(TransactionBuilder) {
         let sendRequest = this.sendRequest.bind(this);
         let _get_type_operation = TransactionBuilder.prototype.get_type_operation;
-        TransactionBuilder.prototype.get_type_operation = function get_type_operation(name, payload) {
-            if (!this.operations_to_send) {
-                this.operations_to_send = [];
-            }
-            this.operations_to_send.push([name, payload]);
-            return _get_type_operation.bind(this)(name, payload);
-        };
         TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
             if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
                 throw new Error("Do not inject wif while using Beet")
@@ -500,10 +493,10 @@ class BeetConnection {
         };
         let send_to_beet = function sendToBeet(builder) {
             return new Promise((resolve, reject) => {
-                if (builder.operations_to_send.length != builder.operations.length) {
+                if (builder.operations.length != builder.operations.length) {
                     throw "Serialized and constructed operation count differs"
                 }
-                let args = ["signAndBroadcast", builder.ref_block_num, builder.ref_block_prefix, builder.expiration, builder.operations_to_send, builder.signer_public_keys];
+                let args = ["signAndBroadcast", JSON.stringify(builder.toObject()), builder.signer_public_keys];
                 sendRequest('api', {
                     method: 'injectedCall',
                     params: args
