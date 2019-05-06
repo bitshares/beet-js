@@ -7,7 +7,7 @@
             let app = await beet.get("BitShares Injection Example", "BTS");
 
             // inject beet
-            TransactionBuilder = app.BTS.inject(bitshares_js.TransactionBuilder);
+            TransactionBuilder = app.BTS.inject(bitshares_js.TransactionBuilder, {sign: true, broadcast: false});
 
             console.log(app.BTS.getAccount());
 
@@ -48,11 +48,12 @@
 
             // build transfer operation
             let  tr = new TransactionBuilder(tx);
-console.log(tr);
             await tr.set_required_fees();
             tr.add_signer("inject_wif");
-            console.log(tr.toObject());
-            await tr.broadcast();
+            console.log("presign", tr.toObject());
+            await tr.finalize();
+            await tr.sign();
+            console.log("postsign", tr.toObject());
         } catch (err) {
             console.error(err);
         }
