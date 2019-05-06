@@ -464,70 +464,104 @@ class BeetConnection {
         return binancejs;
     }
 
-    injectTransactionBuilder(TransactionBuilder) {
+    injectTransactionBuilder(TransactionBuilder, options) {
         let sendRequest = this.sendRequest.bind(this);
-        let _get_type_operation = TransactionBuilder.prototype.get_type_operation;
-        TransactionBuilder.prototype.get_type_operation = function get_type_operation(name, payload) {
-            if (!this.operations_to_send) {
-                this.operations_to_send = [];
-            }
-            this.operations_to_send.push([name, payload]);
-            return _get_type_operation.bind(this)(name, payload);
-        };
-        TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
-            if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
-                throw new Error("Do not inject wif while using Beet")
-            }
-            if (!this.signer_public_keys) {
-                this.signer_public_keys = [];
-            }
-            this.signer_public_keys.push(public_key);
-        };
-        TransactionBuilder.prototype.sign = function sign(chain_id = null) {
-            // do nothing, wait for broadcast
-            if (!this.tr_buffer) {
-                throw new Error("not finalized");
-            }
-            if (this.signed) {
-                throw new Error("already signed");
-            }
-            if (!this.signer_public_keys.length) {
-                throw new Error(
-                    "Transaction was not signed. Do you have a private key? [no_signers]"
-                );
-            }
-            this.signed = true;
-        };
-        let send_to_beet = function sendToBeet(builder) {
-            return new Promise((resolve, reject) => {
-                if (builder.operations_to_send.length != builder.operations.length) {
-                    throw "Serialized and constructed operation count differs"
+
+        // if both options are set, we only want 1 beet call anyways
+        if (options.sign && options.broadcast) {
+            // forfeit private keys, and store public keys
+            TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
+                if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
+                    throw new Error("Do not inject wif while using Beet")
                 }
-                let args = ["signAndBroadcast", builder.ref_block_num, builder.ref_block_prefix, builder.expiration, builder.operations_to_send, builder.signer_public_keys];
-                sendRequest('api', {
-                    method: 'injectedCall',
-                    params: args
-                }).then((result) => {
-                    resolve(result);
-                }).catch((err) => {
-                    reject(err);
-                });
-            });
-        };
-        TransactionBuilder.prototype.broadcast = function broadcast(was_broadcast_callback) {
-            return new Promise((resolve, reject) => {
-                // forward to beet
-                send_to_beet(this).then(
-                    result => {
-                        if (was_broadcast_callback) {
-                            was_broadcast_callback();
-                        }
-                        resolve(result);
+                if (!this.signer_public_keys) {
+                    this.signer_public_keys = [];
+                }
+                this.signer_public_keys.push(public_key);
+            };
+            TransactionBuilder.prototype.sign = function sign(chain_id = null) {
+                // do nothing, wait for broadcast
+                if (!this.tr_buffer) {
+                    throw new Error("not finalized");
+                }
+                if (this.signed) {
+                    throw new Error("already signed");
+                }
+                if (!this.signer_public_keys.length) {
+                    throw new Error(
+                        "Transaction was not signed. Do you have a private key? [no_signers]"
+                    );
+                }
+                this.signed = true;
+            };
+            let send_to_beet = function sendToBeet(builder) {
+                return new Promise((resolve, reject) => {
+                    if (builder.operations.length != builder.operations.length) {
+                        throw "Serialized and constructed operation count differs"
                     }
-                ).catch(err => {
-                    reject(err);
+                    let args = ["signAndBroadcast", JSON.stringify(builder.toObject()), builder.signer_public_keys];
+                    sendRequest('api', {
+                        method: 'injectedCall',
+                        params: args
+                    }).then((result) => {
+                        resolve(result);
+                    }).catch((err) => {
+                        reject(err);
+                    });
                 });
-            });
+            };
+            TransactionBuilder.prototype.broadcast = function broadcast(was_broadcast_callback) {
+                return new Promise((resolve, reject) => {
+                    // forward to beet
+                    send_to_beet(this).then(
+                        result => {
+                            if (was_broadcast_callback) {
+                                was_broadcast_callback();
+                            }
+                            resolve(result);
+                        }
+                    ).catch(err => {
+                        reject(err);
+                    });
+                });
+            }
+        } else if (options.sign && !options.broadcast) {
+            // forfeit private keys, and store public keys
+            TransactionBuilder.prototype.add_signer = function add_signer(private_key, public_key) {
+                if (typeof private_key !== "string" || !private_key || private_key !== "inject_wif") {
+                    throw new Error("Do not inject wif while using Beet")
+                }
+                if (!this.signer_public_keys) {
+                    this.signer_public_keys = [];
+                }
+                this.signer_public_keys.push(public_key);
+            };
+            TransactionBuilder.prototype.sign = function sign(chain_id = null) {
+                return new Promise((resolve, reject) => {
+                    let args = ["sign", JSON.stringify(this.toObject()), this.signer_public_keys];
+                    sendRequest('api', {
+                        method: 'injectedCall',
+                        params: args
+                    }).then((result) => {
+                        // check that it's the same
+                        console.log(result);
+                        let tr = new TransactionBuilder(JSON.parse(result));
+                        let sigs = tr.signatures;
+                        tr.signatures = [];
+                        if (JSON.stringify(tr) === JSON.stringify(this)) {
+                            throw "Oh boy!"
+                        }
+                        this.signatures = sigs;
+                        this.signer_private_keys = [];
+                        this.signed = true;
+                        resolve();
+                    }).catch((err) => {
+                        reject(err);
+                    });
+                });
+            };
+        } else if (!options.sign && options.broadcast) {
+            throw "Unsupported injection"
         }
         return TransactionBuilder;
     }
