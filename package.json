@@ -27,6 +27,6 @@
     "crypto-js": "^3.1.9-1",
     "dexie": "^2.0.4",
     "elliptic": "^6.4.1",
-    "otpauth": "^3.2.1"
+    "otpauth": "^3.2.8"
   }
 }
