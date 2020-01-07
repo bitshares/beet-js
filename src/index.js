@@ -8,7 +8,7 @@ class BeetJS {
         this._beetAppInstances = {};
     }
 
-    allowLocalhost() {
+    allowLocalhostFallback() {
         _allowFallback();
     }
 

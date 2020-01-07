@@ -12,18 +12,21 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
             try {
                 let socket = new WebSocket(host);
                 socket.onerror = function (event) {
+                    _ignoreErrorsFrom.push(host);
                     // only fallback for an error on first initialisation
-                    if (allowFallback && event.timeStamp < 2000 && next !== null) {
+                    if (_allowFallback && event.timeStamp < 2000 && next !== null) {
                         event.stopPropagation();
                         event.preventDefault();
                         console.log("Falling back to localhost socket", event);
-                        _ignoreErrorsFrom.push(host);
                         _connect(next, null).then(socket => {
-                            console.log("error resolve")
                             resolve(socket);
                         }).catch(reject);
-                    } else if (onerror != null) {
-                        onerror(event, socket);
+                    } else {
+                        reject("Socket initialization errored.")
+                        if (onerror != null) {
+                            console.log(event)
+                            onerror(event, socket);
+                        }
                     }
                 };
                 socket.onopen = function (event) {
@@ -44,10 +47,10 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
                 };
                 socket.onclose = function (event) {
                     if (event.target && event.target.url && _ignoreErrorsFrom.includes(event.target.url)) {
-                        console.error("Ignoring onclose for errored socket: ", event.target.url);
+                        console.log("Ignoring onclose for errored socket: ", event.target.url);
                         return;
                     }
-                    reject(socket);
+                    reject("Socket was closed");
                     if (onclose !== null) {
                         onclose(event, socket);
                     }

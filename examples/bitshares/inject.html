@@ -3,6 +3,7 @@
 <script>
     let init = async function() {
         try {
+            beet.allowLocalhostFallback();
             // establish connection to beet
             let app = await beet.get("BitShares Injection Example", "BTS");
 
