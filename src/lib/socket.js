@@ -9,18 +9,25 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
 
     let _connect = function (host, next) {
         return new Promise((resolve, reject) => {
+
+            const _isFallbackPossible = _allowFallback && next !== null;
+            const _tryFallback = () => {
+                console.log("Falling back to localhost socket", next);
+                _connect(next, null).then(socket => {
+                    resolve(socket);
+                }).catch(reject);
+            };
+
+
             try {
                 let socket = new WebSocket(host);
                 socket.onerror = function (event) {
                     _ignoreErrorsFrom.push(host);
                     // only fallback for an error on first initialisation
-                    if (_allowFallback && event.timeStamp < 2000 && next !== null) {
+                    if (_isFallbackPossible) {
                         event.stopPropagation();
                         event.preventDefault();
-                        console.log("Falling back to localhost socket", event);
-                        _connect(next, null).then(socket => {
-                            resolve(socket);
-                        }).catch(reject);
+                        _tryFallback();
                     } else {
                         reject("Socket initialization errored.")
                         if (onerror != null) {
@@ -68,7 +75,13 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
                     }
                 };
             } catch (err) {
-                console.log(err);
+                if (_isFallbackPossible) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    _tryFallback();
+                } else {
+                    console.log(err);
+                }
             }
 
         });
