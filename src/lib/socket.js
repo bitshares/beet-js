@@ -1,4 +1,4 @@
-let SSL_HOST = 'wss://local.get-beet.io:60556/';
+let SSL_HOST = 'wss://beet.bitshares.org:60556/';
 let LOCAL_HOST = 'ws://localhost:60555/';
 let _allowFallback = false;
 
