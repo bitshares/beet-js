@@ -1,0 +1,21 @@
+import BeetESM from 'beet-esm';
+
+let init = async function() {
+    try {
+        let app = await BeetESM.get("BitCoin Testnet Transfer Example", "BTC_TEST");
+        console.log("Linked account", app.BTC_TEST.getAccount());
+        await app.BTC_TEST.transfer(
+            {
+                to: "bitcoin_address",
+                amount:
+                    {
+                        satoshis: 100000,
+                        asset_id: "BTC"
+                    }
+            }
+        );
+    } catch (err) {
+        console.error(err);
+    }
+};
+init();

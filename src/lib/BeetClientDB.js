@@ -7,10 +7,6 @@ class BeetClientDB {
             this._db.version(1).stores({
                 apps: `++id,&identityhash,apphash,chain,appName,secret,next_id`
             });
-            // not necessary, opens on first usage
-            //this._opened = false;
-            //this._opening = false;
-            //this._ensure();
             BeetClientDB.instance = this;
         }
         return BeetClientDB.instance._db;

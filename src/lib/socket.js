@@ -1,17 +1,14 @@
-let SSL_HOST = 'wss://local.get-beet.io:60556/';
 let LOCAL_HOST = 'ws://localhost:60555/';
 let _allowFallback = false;
 
-let getWebSocketConnection = function (onopen = null, onmessage = null, onclose = null, onerror = null) {
-    let _host = SSL_HOST;
-    let _next = LOCAL_HOST;
+export const getWebSocketConnection = function (onopen = null, onmessage = null, onclose = null, onerror = null) {
     let _ignoreErrorsFrom = [];
 
-    let _connect = function (host, next) {
+    let _connect = () => {
         return new Promise((resolve, reject) => {
             try {
                 let socket = new WebSocket(host);
-                socket.onerror = function (event) {
+                socket.onerror = (event) => {
                     _ignoreErrorsFrom.push(host);
                     // only fallback for an error on first initialisation
                     if (_allowFallback && event.timeStamp < 2000 && next !== null) {
@@ -29,7 +26,7 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
                         }
                     }
                 };
-                socket.onopen = function (event) {
+                socket.onopen = (event) => {
                     if (event.target && event.target.url && _ignoreErrorsFrom.includes(event.target.url)) {
                         if (socket.readyState === socket.OPEN || socket.readyState === socket.CONNECTING) {
                             socket.close();
@@ -45,7 +42,7 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
                         }
                     });
                 };
-                socket.onclose = function (event) {
+                socket.onclose = (event) => {
                     if (event.target && event.target.url && _ignoreErrorsFrom.includes(event.target.url)) {
                         console.log("Ignoring onclose for errored socket: ", event.target.url);
                         return;
@@ -55,7 +52,7 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
                         onclose(event, socket);
                     }
                 };
-                socket.onmessage = function (event) {
+                socket.onmessage = (event) => {
                     if (event.target && event.target.url && _ignoreErrorsFrom.includes(event.target.url)) {
                         if (socket.readyState === socket.OPEN || socket.readyState === socket.CONNECTING) {
                             socket.close();
@@ -73,11 +70,10 @@ let getWebSocketConnection = function (onopen = null, onmessage = null, onclose 
 
         });
     };
-    return _connect(_host, _next);
+
+    return _connect();
 };
 
-let allowFallback = function () {
+export const allowFallback = function () {
     _allowFallback = true;
 };
-
-export {getWebSocketConnection, allowFallback};

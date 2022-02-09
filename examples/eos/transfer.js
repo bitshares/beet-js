@@ -1,6 +1,5 @@
-<script src="../../dist/beet-js.js"></script>
+import BeetESM from 'beet-esm';
 
-<script>
 beet.get("My Transfer App", "EOS", true).then( async app => {
     app.EOS.transfer(
         {
@@ -19,4 +18,3 @@ beet.get("My Transfer App", "EOS", true).then( async app => {
 }).catch(err => {
     console.error(err);
 });
-</script>

@@ -1,8 +1,7 @@
-import BeetApp from "./lib/BeetApp";
-import {allowFallback as _allowFallback, getWebSocketConnection} from "./lib/socket";
+import BeetApp from './lib/BeetApp.js';
+import {allowFallback as _allowFallback, getWebSocketConnection} from './lib/socket.js';
 
-
-class BeetJS {
+class BeetESM {
 
     constructor() {
         this._beetAppInstances = {};
@@ -122,7 +121,7 @@ class Holder {
         this.beet = _companion;
     }
 }
-let holder = new Holder(new BeetJS());
+let holder = new Holder(new BeetESM());
 if (typeof window !== 'undefined') window.beet = holder.beet;
 
 export default holder;

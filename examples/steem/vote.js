@@ -1,6 +1,6 @@
-<script src="../../dist/beet-js.js"></script>
-<script>
-beet.get('beet-js example for steem', 'STEEM').then(app => {
+import BeetESM from 'beet-esm';
+
+BeetESM.get('beet-js example for steem', 'STEEM').then(app => {
     app.STEEM.voteFor(
          {
              author: "krazykrista",
@@ -25,4 +25,3 @@ beet.get('beet-js example for steem', 'STEEM').then(app => {
 }).catch((err) => {
     console.error(err);
 });
-</script>
