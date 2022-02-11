@@ -1,8 +1,8 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 
 let init = async () => {
     try {
-        let app = await BeetESM.get("Binance Transfer Example", "BNB_TEST");
+        let app = await beet.get("Binance Transfer Example", "BNB_TEST");
         console.log("Linked account", app.BNB_TEST.getAccount());
         await app.BNB_TEST.transfer(
             {

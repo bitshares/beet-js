@@ -1,10 +1,10 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 import steem from 'steem';
 
 let init = async function() {
     try {
         // link to beet
-        let app = await BeetESM.get("Library Injection: Example", "STEEM");
+        let app = await beet.get("Library Injection: Example", "STEEM");
         console.log("Linked account", app.STEEM.getAccount());
 
         // inject beet

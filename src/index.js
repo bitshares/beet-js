@@ -1,76 +1,42 @@
 import BeetApp from './lib/BeetApp.js';
 import {allowFallback as _allowFallback, getWebSocketConnection} from './lib/socket.js';
 
-class BeetESM {
+const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
 
-    constructor() {
-        this._beetAppInstances = {};
-    }
-
-    allowLocalhostFallback() {
-        _allowFallback();
-    }
+class BeetJS {
 
     /**
-     * Gets a plain instance of a beet connected application, user can handle
-     * connections and identities as required.
+     * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
      *
-     * @param String appName The name of the application that wants to connect to beet
-     * @returns Returns the beet instance for this application,
+     * @param {String} appName
+     * @param {String} chain (Target blockchain)
+     * @param {BeetApp} existingBeetApp (Provide stored beet app)
+     * @param {boolean} forceToChoose (Trigger account prompt in Beet)
+     * @returns {Object} beet instance & requested chain connection
      */
-    async getApp(appName) {
-        if (this._beetAppInstances[appName]) {
-            return this._beetAppInstances[appName];
-        } else {
-            let appInstance = new BeetApp(appName);
-            await appInstance.init();
-            this._beetAppInstances[appName] = appInstance;
-            return this._beetAppInstances[appName];
-        }
-    }
-    /**
-     * Gets an instance of a beet connected application, and does the identity
-     * handling for the requested chains.
-     *
-     * @param String appName The name of the application that wants to connect
-     *                       to beet
-     * @param String or List chainSelector A string, or list of strings giving
-     *                       the chains the app wants an identity of
-     * @param boolean forceToChoose [false] Always ask on beet to choose an account
-     * @returns Returns a dict with following keys: 'beet' contains the beet instance for this application,
-     *           and one key for each entry in chainSelector, which contains the beet connection for that identity
-     */
-    async get(appName, chainSelector, forceToChoose = false) {
-        let _beetConnectedApp = null;
-        if (this._beetAppInstances[appName]) {
-            _beetConnectedApp = this._beetAppInstances[appName];
-        } else {
-            let appInstance = new BeetApp(appName);
-            await appInstance.init();
-            this._beetAppInstances[appName] = appInstance;
-            _beetConnectedApp = this._beetAppInstances[appName];
-        }
-
-        if (typeof chainSelector == "string") {
-            chainSelector = [chainSelector]
-        }
-        if (typeof chainSelector !== "object" && chainSelector.length > 0 && typeof chainSelector[0] == "string") {
-            throw "chainSelector must be null, a string or list of strings"
+    async get(appName, chain, existingBeetApp = null, identity = null) {
+        if (!chain || !chain in allowedChains) {
+          throw "Unable to establish a chain connection without target chain."
         }
 
         let returnValue = {
-            beet: _beetConnectedApp
+            beet: existingBeetApp
+                  ? existingBeetApp
+                  : new BeetApp(appName, browser, origin)
         };
-        for (let idx in chainSelector) {
-            let chain = chainSelector[idx];
-            if (chain == 'ANY') {
-                returnValue[chain] = await _beetConnectedApp.getAnyConnection(!forceToChoose);
-            } else {
-                returnValue[chain] = await _beetConnectedApp.getChainConnection(chain, !forceToChoose);
-            }
-        }
-        return returnValue;
 
+        let connection;
+        try {
+          connection = await returnValue.beet.newConnection(chain, identity);
+        } catch (error) {
+          console.log(error);
+          throw error;
+        }
+
+        returnValue[chain] = connection.beet;
+        returnValue.newIdentity = connection.id;
+        
+        return returnValue;
     }
 
     /**
@@ -121,7 +87,7 @@ class Holder {
         this.beet = _companion;
     }
 }
-let holder = new Holder(new BeetESM());
-if (typeof window !== 'undefined') window.beet = holder.beet;
+
+let holder = new Holder(new BeetJS());
 
 export default holder;

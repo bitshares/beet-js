@@ -1,6 +1,6 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 
-BeetESM.get("BitCoin Transfer Example", "BTC")
+beet.get("BitCoin Transfer Example", "BTC")
   .then(app => {
     app.BTC.transfer(
         {

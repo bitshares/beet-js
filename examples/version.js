@@ -1,8 +1,8 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 
 let init = async function() {
     try {
-        let version = await BeetESM.ping();
+        let version = await beet.ping();
         console.log(version);
     } catch (err) {
         console.error(err);

@@ -1,7 +1,7 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 
 function triggerTransfer(targetAccount, amountInSatoshi, assetId) {
-    BeetESM.get("BitShares Transfer Example", "BTS", true).then(app => {
+    beet.get("BitShares Transfer Example", "BTS", true).then(app => {
         app.BTS.transfer(
             {
                 to: targetAccount,

@@ -1,4 +1,4 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 
 beet.get("My Transfer App", "EOS", true).then( async app => {
     app.EOS.transfer(

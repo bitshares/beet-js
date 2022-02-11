@@ -1,4 +1,4 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 import bitshares from 'bitsharesjs';
 
 let init = async () => {

@@ -1,11 +1,11 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 import bitshares from 'bitsharesjs';
 
 let init = async () => {
     try {
-        BeetESM.allowLocalhostFallback();
+        beet.allowLocalhostFallback();
         // establish connection to beet
-        let app = await BeetESM.get("BitShares Injection Example", "BTS");
+        let app = await beet.get("BitShares Injection Example", "BTS");
 
         // inject beet
         TransactionBuilder = app.BTS.inject(bitshares.TransactionBuilder);

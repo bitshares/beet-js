@@ -1,7 +1,7 @@
-import BeetESM from 'beet-esm';
+import beet from 'beet-esm';
 import steem from 'steem';
 
-BeetESM.get('beet-js example for steem', 'STEEM').then(app => {
+beet.get('beet-js example for steem', 'STEEM').then(app => {
     steem = app.STEEM.inject(steem);
     app.STEEM.getAccount().then(account => {
         if (typeof account == "string") {
