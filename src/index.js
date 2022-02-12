@@ -1,5 +1,5 @@
 import BeetApp from './lib/BeetApp.js';
-import {allowFallback as _allowFallback, getWebSocketConnection} from './lib/socket.js';
+import {allowFallback as getWebSocketConnection} from './lib/socket.js';
 
 const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
 
@@ -21,15 +21,15 @@ class BeetJS {
           throw "Unable to establish a chain connection without target chain."
         }
 
-        let returnValue = {
-            beet: existingBeetApp
-                  ? existingBeetApp
-                  : new BeetApp(appName, browser, origin)
-        };
+        let appInstance = existingBeetApp
+                            ? existingBeetApp
+                            : new BeetApp(appName, browser, origin);
+
+        let returnValue = { beet: appInstance };
 
         let connection;
         try {
-          connection = await returnValue.beet.newConnection(chain, identity);
+          connection = await appInstance.newConnection(chain, identity);
         } catch (error) {
           console.log(error);
           throw error;

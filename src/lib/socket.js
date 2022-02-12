@@ -1,3 +1,5 @@
+import Socket from 'simple-websocket';
+
 let LOCAL_HOST = 'ws://localhost:60555/';
 let _allowFallback = false;
 
@@ -7,9 +9,9 @@ export const getWebSocketConnection = function (onopen = null, onmessage = null,
     let _connect = () => {
         return new Promise((resolve, reject) => {
             try {
-                let socket = new WebSocket(host);
+                let socket = new Socket(LOCAL_HOST);
                 socket.onerror = (event) => {
-                    _ignoreErrorsFrom.push(host);
+                    _ignoreErrorsFrom.push(LOCAL_HOST);
                     // only fallback for an error on first initialisation
                     if (_allowFallback && event.timeStamp < 2000 && next !== null) {
                         event.stopPropagation();

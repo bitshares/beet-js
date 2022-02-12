@@ -3,7 +3,7 @@ import OTPAuth from 'otpauth';
 
 import sha256 from "crypto-js/sha256.js";
 import aes from "crypto-js/aes.js";
-import ENC from 'crypto-js/enc-utf8';
+import ENC from 'crypto-js/enc-utf8.js';
 import * as ed from '@noble/ed25519';
 
 import {
@@ -122,7 +122,7 @@ class BeetConnection {
                             appName: this.appName,
                             secret: this.secret.toString('hex'),
                             next_id: next_id,
-                            linkRequest.requested,
+                            requested: linkRequest.requested,
                         };
 
       this.otp = new OTPAuth.HOTP({
@@ -170,7 +170,7 @@ class BeetConnection {
                     origin: this.origin,
                     appName: this.appName,
                     browser: this.browser,
-                    identityhash: this.identity.identityhash
+                    identityhash: this.identity.identityhash,
                   }
                 : {
                     origin: this.origin,

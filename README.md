@@ -1,18 +1,12 @@
-# BeetJS
+# Beet-ESM
 
-BeetJS is the client library for interaction with Beet (https://github.com/bitshares/beet).
+BeetESM is a client library for interaction with Beet (https://github.com/bitshares/beet).
 
 ## Installation
 
 ### Node module
 
     npm install @beetapp/beet-js
-
-### Browserify
-
-The browser bundle is built using webpack and can be found in
-
-    dist/beet-js.js
 
 ## Examples
 
