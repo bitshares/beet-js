@@ -3,7 +3,7 @@ import beet from 'beet-esm';
 let init = async () => {
     try {
         // link to beet
-        let app = await beet.get("Binance Transfer Example", "BNB_TEST");
+        let app = await beet.get("Binance Transfer Example", "Mozilla", "website.tld", "BNB_TEST");
         console.log("Linked account", app.BNB_TEST.getAccount());
 
         // todo: need to load browserified binance sdk

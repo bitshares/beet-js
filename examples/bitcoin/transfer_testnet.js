@@ -2,7 +2,7 @@ import beet from 'beet-esm';
 
 let init = async function() {
     try {
-        let app = await beet.get("BitCoin Testnet Transfer Example", "BTC_TEST");
+        let app = await beet.get("BitCoin Testnet Transfer Example", "Mozilla", "website.tld", "BTC_TEST");
         console.log("Linked account", app.BTC_TEST.getAccount());
         await app.BTC_TEST.transfer(
             {

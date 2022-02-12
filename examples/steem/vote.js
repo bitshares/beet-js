@@ -1,6 +1,6 @@
 import beet from 'beet-esm';
 
-beet.get('beet-js example for steem', 'STEEM').then(app => {
+beet.get('beet-js example for steem', "Mozilla", "website.tld", 'STEEM').then(app => {
     app.STEEM.voteFor(
          {
              author: "krazykrista",

@@ -1,6 +1,6 @@
 import beet from 'beet-esm';
 
-beet.get("Binance Signature", "BNB").then(beet => {
+beet.get("Binance Signature", "Mozilla", "website.tld", "BNB").then(beet => {
     beet.BNB.signMessage("This is a message to be signed!").then(res => {
         console.log(res);
     }).catch((err) => {

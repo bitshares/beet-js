@@ -9,12 +9,14 @@ class BeetJS {
      * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
      *
      * @param {String} appName
+     * @param {String} browser (User browser)
+     * @param {String} origin (website url)
      * @param {String} chain (Target blockchain)
      * @param {BeetApp} existingBeetApp (Provide stored beet app)
      * @param {boolean} forceToChoose (Trigger account prompt in Beet)
      * @returns {Object} beet instance & requested chain connection
      */
-    async get(appName, chain, existingBeetApp = null, identity = null) {
+    async get(appName, browser, origin, chain, existingBeetApp = null, identity = null) {
         if (!chain || !chain in allowedChains) {
           throw "Unable to establish a chain connection without target chain."
         }
@@ -35,7 +37,7 @@ class BeetJS {
 
         returnValue[chain] = connection.beet;
         returnValue.newIdentity = connection.id;
-        
+
         return returnValue;
     }
 

@@ -1,6 +1,6 @@
 import beet from 'beet-esm';
 
-beet.get("My Transfer App", "EOS", true).then( async app => {
+beet.get("My Transfer App", "Mozilla", "website.tld", "EOS", true).then( async app => {
     app.EOS.transfer(
         {
             to: "clockworkbts",

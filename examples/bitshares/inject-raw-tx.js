@@ -4,7 +4,7 @@ import bitshares from 'bitsharesjs';
 let init = async () => {
     try {
         // establish connection to beet
-        let app = await beet.get("BitShares Injection Example", "BTS");
+        let app = await beet.get("BitShares Injection Example", "Mozilla", "website.tld", "BTS");
 
         // inject beet
         TransactionBuilder = app.BTS.inject(bitshares.TransactionBuilder, {sign: true, broadcast: false});

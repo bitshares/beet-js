@@ -4,7 +4,7 @@ import steem from 'steem';
 let init = async function() {
     try {
         // link to beet
-        let app = await beet.get("Library Injection: Example", "STEEM");
+        let app = await beet.get("Library Injection: Example", "Mozilla", "website.tld", "STEEM");
         console.log("Linked account", app.STEEM.getAccount());
 
         // inject beet
