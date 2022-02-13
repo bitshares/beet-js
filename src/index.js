@@ -1,95 +1,88 @@
-import BeetApp from './lib/BeetApp.js';
-import {allowFallback as getWebSocketConnection} from './lib/socket.js';
-
+import Socket from 'simple-websocket';
+import sha256 from "crypto-js/sha256.js";
+import BeetConnection from "./lib/BeetConnection.js";
 const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
 
-class BeetJS {
+/**
+ * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
+ *
+ * @param {String} appName
+ * @param {String} browser (User browser)
+ * @param {String} origin (website url)
+ * @param {String} chain (Target blockchain)
+ * @param {BeetConnection} existingBeetConnection (Provide stored connection)
+ * @param {boolean} forceToChoose (Trigger account prompt in Beet)
+ * @returns {Object} beet instance & requested chain connection
+*/
+export const beet = async function (
+  appName,
+  browser,
+  origin,
+  chain,
+  existingBeetConnection = null,
+  identity = null
+) {
+  if (!chain || !chain in allowedChains) {
+    throw "Unable to establish a chain connection without target chain."
+  }
 
-    /**
-     * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
-     *
-     * @param {String} appName
-     * @param {String} browser (User browser)
-     * @param {String} origin (website url)
-     * @param {String} chain (Target blockchain)
-     * @param {BeetApp} existingBeetApp (Provide stored beet app)
-     * @param {boolean} forceToChoose (Trigger account prompt in Beet)
-     * @returns {Object} beet instance & requested chain connection
-     */
-    async get(appName, browser, origin, chain, existingBeetApp = null, identity = null) {
-        if (!chain || !chain in allowedChains) {
-          throw "Unable to establish a chain connection without target chain."
-        }
+  let appHash = sha256(browser + ' ' + origin + ' ' + appName).toString();
 
-        let appInstance = existingBeetApp
-                            ? existingBeetApp
-                            : new BeetApp(appName, browser, origin);
+  let beetConnection = existingBeetConnection
+                      ? existingBeetConnection
+                      : new BeetConnection(appName, appHash, browser, origin);
+  let isReady;
+  try {
+    isReady = identity
+      ? await beetConnection.connect(identity)
+      : await beetConnection.connect();
+  } catch (error) {
+    console.log(error);
+    //beetConnection.disconnect();
+    return;
+  }
 
-        let returnValue = { beet: appInstance };
+  if (!beetConnection.socket || !beetConnection.connected) {
+    console.log(`connected: ${beetConnection.connected} socket: ${beetConnection.socket ? true : false}`);
+    return;
+  }
 
-        let connection;
-        try {
-          connection = await appInstance.newConnection(chain, identity);
-        } catch (error) {
-          console.log(error);
-          throw error;
-        }
+  let newIdentity;
+  try {
+    newIdentity = chain
+      ? await beetConnection.link(chain)
+      : await beetConnection.link();
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 
-        returnValue[chain] = connection.beet;
-        returnValue.newIdentity = connection.id;
+  let getContents = {newIdentity: newIdentity};
+  getContents[chain] = beetConnection;
 
-        return returnValue;
-    }
-
-    /**
-     * Pings Beet by hecking the version
-     *
-     * @returns {Promise} Resolves to the installed version of Beet
-     */
-    ping() {
-        return new Promise((resolve, reject) => {
-            getWebSocketConnection(
-                function (event, socket) {
-                    socket.send('{"type" : "version"}');
-                },
-                function (event, socket) {
-                    let msg = JSON.parse(event.data);
-                    if (msg.type == "version") {
-                        resolve(msg.result);
-                    } else {
-                        reject(false);
-                    }
-                    socket.close();
-                }
-            );
-        });
-    }
-
-    /**
-     * Uses ping() with a timeout to check if Beet is installed.
-     *
-     * @returns {Promise} Resolves to true (if installed) and false (not installed)
-     */
-    isInstalled() {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve(false);
-            }, 500);
-            this.ping().then(found => {
-                if (found) resolve(found);
-            });
-
-        })
-    }
-
+  return getContents;
 }
 
-class Holder {
-    constructor(_companion) {
-        this.beet = _companion;
-    }
+/**
+ * Checks for a Beet web socket response
+ *
+ * @returns {boolean} Resolves to true (if installed) and false (not installed)
+*/
+export const checkBeet = async function () {
+  return new Promise((resolve, reject) => {
+    let socket = new Socket('ws://localhost:60555');
+
+    socket.on('error', function (error) {
+      console.log("Couldn't connect to Beet")
+      socket.destroy();
+      return resolve(false);
+    })
+
+    socket.on('connect', () => {
+      // socket is connected!
+      console.log("Connected!");
+      socket.destroy();
+      return resolve(true);
+    })
+  });
 }
-
-let holder = new Holder(new BeetJS());
-
-export default holder;
