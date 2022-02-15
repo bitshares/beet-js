@@ -31,6 +31,7 @@ export const beet = async function (
   let beetConnection = existingBeetConnection
                       ? existingBeetConnection
                       : new BeetConnection(appName, appHash, browser, origin);
+
   let isReady;
   try {
     isReady = identity
@@ -38,7 +39,6 @@ export const beet = async function (
       : await beetConnection.connect();
   } catch (error) {
     console.log(error);
-    //beetConnection.disconnect();
     return;
   }
 
