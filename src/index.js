@@ -1,7 +1,7 @@
-import Socket from 'simple-websocket';
 import sha256 from "crypto-js/sha256.js";
 import BeetConnection from "./lib/BeetConnection.js";
 const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
+import { io } from "socket.io-client";
 
 /**
  * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
@@ -11,56 +11,62 @@ const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
  * @param {String} origin (website url)
  * @param {String} chain (Target blockchain)
  * @param {BeetConnection} existingBeetConnection (Provide stored connection)
- * @param {boolean} forceToChoose (Trigger account prompt in Beet)
- * @returns {Object} beet instance & requested chain connection
+ * @param {boolean} identity
+ * @returns {BeetConnection}
 */
-export const beet = async function (
+export const connect = async function (
   appName,
   browser,
   origin,
-  chain,
   existingBeetConnection = null,
   identity = null
 ) {
+  let appHash;
+  try {
+    appHash = sha256(browser + ' ' + origin + ' ' + appName).toString();
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+
+  let beetConnection;
+  try {
+    beetConnection = existingBeetConnection
+                        ? existingBeetConnection // attempt to reconnect
+                        : new BeetConnection(appName, appHash, browser, origin, identity);
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+
+  console.log(`Connected to Beet`)
+  return beetConnection;
+}
+
+/**
+ * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
+ *
+ * @param {String} chain (Target blockchain)
+ * @param {BeetConnection} beetConnection (Provide stored connection)
+ * @returns {Object}
+*/
+export const link = async function (chain = 'ANY', beetConnection) {
   if (!chain || !chain in allowedChains) {
-    throw "Unable to establish a chain connection without target chain."
+    console.log("Unable to establish a chain connection without target chain.");
+    return;
   }
 
-  let appHash = sha256(browser + ' ' + origin + ' ' + appName).toString();
+  if (!beetConnection) {
+    console.log("No beet connection for link request");
+    return;
+  }
 
-  let beetConnection = existingBeetConnection
-                      ? existingBeetConnection
-                      : new BeetConnection(appName, appHash, browser, origin);
-
-  let isReady;
   try {
-    isReady = identity
-      ? await beetConnection.connect(identity)
-      : await beetConnection.connect();
+    await beetConnection.link(chain);
   } catch (error) {
-    console.log(error);
+    console.log(`Unable to link: ${error}`);
     return;
   }
-
-  if (!beetConnection.socket || !beetConnection.connected) {
-    console.log(`connected: ${beetConnection.connected} socket: ${beetConnection.socket ? true : false}`);
-    return;
-  }
-
-  let newIdentity;
-  try {
-    newIdentity = chain
-      ? await beetConnection.link(chain)
-      : await beetConnection.link();
-  } catch (error) {
-    console.log(error);
-    return;
-  }
-
-  let getContents = {newIdentity: newIdentity};
-  getContents[chain] = beetConnection;
-
-  return getContents;
 }
 
 /**
@@ -70,19 +76,22 @@ export const beet = async function (
 */
 export const checkBeet = async function () {
   return new Promise((resolve, reject) => {
-    let socket = new Socket('ws://localhost:60555');
+    let socket;
+    try {
+      socket = io("ws://localhost:60555");
+    } catch (error) {
+      console.log(error);
+      resolve(false);
+    }
 
-    socket.on('error', function (error) {
-      console.log("Couldn't connect to Beet")
-      socket.destroy();
-      return resolve(false);
-    })
+    socket.on("connect_error", () => {
+      console.log("connect_error");
+      socket.disconnect();
+      resolve(false);
+    });
 
-    socket.on('connect', () => {
-      // socket is connected!
-      console.log("Connected!");
-      socket.destroy();
-      return resolve(true);
-    })
+    socket.emit("ping", (response) => {
+      resolve(response ? true : false);
+    });
   });
 }

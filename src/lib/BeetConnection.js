@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import OTPAuth from 'otpauth';
-import Socket from 'simple-websocket';
+
+import { io } from "socket.io-client";
 
 import sha256 from "crypto-js/sha256.js";
 import aes from "crypto-js/aes.js";
@@ -13,14 +14,16 @@ import {
   binanceInjection
 } from './blockchains/Binance.js';
 import { steemInjection } from './blockchains/Steem.js';
+import { checkBeet } from '../index.js';
 
 class BeetConnection {
 
-    constructor(appName, appHash, browser, origin) {
+    constructor(appName, appHash, browser, origin, identity) {
       this.appName = appName; // Name/identifier of the app making use of this client
       this.appHash = appHash;
       this.browser = browser;
       this.origin = origin;
+      this.identity = identity;
 
       this.id = null;
       this.next_identification = null;
@@ -28,9 +31,11 @@ class BeetConnection {
       this.connected = false; // State of WS Connection to Beet
       this.authenticated = false; // Whether this app has identified itself to Beet
       this.linked = false; // Whether this app has linked itself to a Beet account/id
-      this.socket = null; // Holds the ws connection
       this.otp = null; // Holds the one-time-password generation for the linked account
       this.requests = []; // Holds pending API request promises to be resolved upon beet response
+
+      this.socket = null;
+      this.connect(this.identity ? this.identity : identity);
     }
 
     /**
@@ -44,7 +49,6 @@ class BeetConnection {
         this.socket = null;
         this.otp = null;
         this.requests = [];
-        this.socket = null;
     }
 
     /**
@@ -69,238 +73,6 @@ class BeetConnection {
     }
 
     /**
-     * Connects to Beet instance. If one of the existing linked identities (returned by init()) is passed, it also tries to enable that link
-     *
-     * @param identity
-     * @param options
-     * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
-     */
-    async connect(identity = null, options) {
-      return new Promise((resolve, reject) => {
-        if (!identity) {
-          this.reset();
-        }
-
-        // Setting options defaults
-        this.options = Object.assign({
-            initTimeout: 3000,
-            linkTimeout: 30000
-        }, options);
-
-        /*
-        setTimeout(() => {
-            console.log("Connection has timed out.");
-            return;
-        }, this.options.initTimeout);
-        */
-
-        if (identity != null) {
-            this.identity = identity;
-        }
-
-        let authobj = identity != null
-            ? {
-                origin: this.origin,
-                appName: this.appName,
-                browser: this.browser,
-                identityhash: this.identity.identityhash,
-              }
-            : {
-                origin: this.origin,
-                appName: this.appName,
-                browser: this.browser,
-              };
-
-
-        let socket = new Socket('ws://localhost:60555/');
-
-        socket.on('connect', async (event) => {
-          this.connected = true;
-
-          let auth;
-          try {
-            auth = await this.sendRequest('authenticate', authobj);
-          } catch (error) {
-            console.error("socket.onopen authenticate rejected", error);
-            return;
-          }
-
-          this.authenticated = auth.authenticate;
-          this.linked = auth.link;
-          if (this.linked) {
-              this.otp = new OTPAuth.HOTP({
-                  issuer: "Beet",
-                  label: "BeetAuth",
-                  algorithm: "SHA1",
-                  digits: 32,
-                  counter: 0,
-                  secret: OTPAuth.Secret.fromHex(this.identity.secret)
-              });
-              //console.debug("otp instantiated", this.identity.secret.toString());
-              this.identity = Object.assign(this.identity, auth.requested);
-          } else {
-              this.beetkey = auth.pub_key;
-          }
-          resolve(auth);
-        });
-
-        socket.on('data', async (event) => {
-          console.log("socket.data"); // groupCollapsed
-          let msg = JSON.parse(event);
-          if (!Object.keys(this.requests).length) {
-            console.log("No open requests");
-            return;
-          };
-
-          const relevantRequest = this.requests.find((x) => {
-            return x.id === msg.id || x.id.toString() === msg.id
-          });
-
-          if (!relevantRequest) {
-            console.log("No relevant requests");
-            return;
-          }
-
-          let response;
-          if (msg.encrypted) {
-            this.otp.counter = msg.id;
-            let key = this.otp.generate();
-            response = aes.decrypt(msg.payload, key).toString(ENC);
-          } else {
-            response = msg.error ? msg.payload.message : msg.payload;
-          }
-
-          if (msg.error) {
-            if (msg.payload.code == 2) {
-              console.log("msg code 2: reset")
-              this.reset();
-            }
-            relevantRequest.reject(response);
-          } else {
-            relevantRequest.resolve(response);
-          }
-          console.groupEnd();
-        });
-
-        socket.on('close', (event) => {
-          this.connected = false;
-          this.socket = null;
-          this.requests = [];
-          console.log("Websocket closed");
-        });
-
-        socket.on('error', (event) => {
-          this.connected = false;
-          this.socket = null;
-          this.requests = [];
-          console.log("A websocket error ocurred");
-        });
-
-        this.socket = socket;
-      });
-    }
-
-    /**
-     * Requests to link to a Beet account/id on specified chain
-     *
-     * @param {String} chain Symbol of the chain to be linked
-     * @param {String} requestDetails Details to be requested from the user, defaults to account (id and name)
-     * @param {String} missingIdentityHash This initiates a relink, and pops up a special message in beet, use e.g. when client side cache gets lost
-     * @returns {Object||Null}
-     */
-    async link(chain = 'ANY', requestDetails = ["account"], missingIdentityHash = null) {
-      if (!this.connected) throw new Error("You must connect to Beet first.");
-
-      setTimeout(() => {
-          return;
-      }, this.options.linkTimeout);
-
-      const privk = ed.utils.randomPrivateKey();
-
-      if (!this.beetkey) {
-        console.log("no beetkey")
-        return;
-      }
-
-      let secret;
-      try {
-        secret = await ed.getSharedSecret(privk, this.beetkey);
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-      this.secret = ed.utils.bytesToHex(secret);
-
-      let next_id = uuidv4();
-      let next_hash;
-      try {
-        next_hash = await sha256(next_id).toString();
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      let pubk;
-      try {
-        pubk = await ed.getPublicKey(privk);
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      let linkobj = {
-          chain: chain,
-          request: requestDetails,
-          pubkey: ed.utils.bytesToHex(pubk),
-          next_hash: next_hash
-      };
-
-      if (!missingIdentityHash == null) {
-          linkobj.identityhash = missingIdentityHash;
-      }
-
-      let linkRequest;
-      try {
-        linkRequest = await this.sendRequest(missingIdentityHash == null ? 'link' : 'relink', linkobj)
-      } catch (error) {
-        console.debug(
-          missingIdentityHash == null
-            ? "link rejected"
-            : "relink rejected",
-          error
-        );
-        this.reset(); // necessary?
-        return;
-      }
-
-      this.linked = linkRequest.link;
-      this.authenticated = linkRequest.authenticate;
-
-      this.identity = linkRequest.existing
-                        ? Object.assign(this.identity, linkRequest.requested)
-                        : {
-                            apphash: this.apphash,
-                            identityhash: linkRequest.identityhash,
-                            chain: linkRequest.chain,
-                            appName: this.appName,
-                            secret: this.secret,
-                            next_id: next_id,
-                            requested: linkRequest.requested,
-                        };
-
-      this.otp = new OTPAuth.HOTP({
-          issuer: "Beet",
-          label: "BeetAuth",
-          algorithm: "SHA1",
-          digits: 32,
-          counter: 0,
-          secret: OTPAuth.Secret.fromHex(this.identity.secret)
-      });
-
-      return this.identity;
-    }
-
-    /**
      * Sends a request to Beet. If it is an API request, it is encrypted with AES using a one-time-pass generated by the request id (as a counter) and a previously established shared secret with Beet (using ECDH)
      *
      * @param {string} type Name of the call to execute
@@ -313,11 +85,9 @@ class BeetConnection {
             return reject('No beet ws connection.');
           }
 
-          console.groupCollapsed("sendRequest");
-          let request = {
-            type: type
-          };
+          console.log(`sending ${type} request`)
 
+          let request = {type: type};
           if (type == 'api') {
               let ids = await this.fetch_ids();
               payload.next_hash = ids.next_hash;
@@ -329,30 +99,254 @@ class BeetConnection {
               request.id = await uuidv4();
               request.payload = payload;
           }
+
           this.requests.push(Object.assign(request, { resolve, reject }));
-          this.socket.send(JSON.stringify(request));
-          console.log("Waiting for response ..");
+          this.socket.emit(type, request);
         });
     }
 
     /**
-     * Disconnects from Beet
+     * Connects to Beet instance. If one of the existing linked identities (returned by init()) is passed, it also tries to enable that link
+     *
+     * @param identity
+     * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
-    disconnect() {
-      if (this.socket) {
-        this.socket.destroy();
-      }
 
-      this.reset();
+    async connect(identity = null) {
+        if (!identity) {
+          this.reset();
+        }
+
+        if (identity != null) {
+          this.identity = identity;
+        }
+
+        this.socket = io("ws://localhost:60555");
+
+        this.socket.on("connected", async () => {
+          this.connected = true;
+
+          try {
+            await this.sendRequest(
+              'authenticate',
+              identity != null && identity.identityhash
+                ? {
+                    origin: this.origin,
+                    appName: this.appName,
+                    browser: this.browser,
+                    identityhash: identity.identityhash,
+                  }
+                : {
+                    origin: this.origin,
+                    appName: this.appName,
+                    browser: this.browser,
+                  }
+            );
+          } catch (error) {
+            console.error("socket.onopen authenticate rejected", error);
+          }
+        });
+
+        this.socket.on("authenticated", (auth) => {
+          console.log("authenticate received")
+          this.authenticated = auth.payload.authenticate;
+          this.linked = auth.payload.link;
+          if (this.linked) {
+              this.otp = new OTPAuth.HOTP({
+                  issuer: "Beet",
+                  label: "BeetAuth",
+                  algorithm: "SHA1",
+                  digits: 32,
+                  counter: 0,
+                  secret: OTPAuth.Secret.fromHex(this.identity.secret)
+              });
+              this.identity = Object.assign(this.identity, auth.payload.requested);
+          } else {
+              this.beetkey = auth.payload.pub_key;
+          }
+        });
+
+        this.socket.on("link", (linkRequest) => {
+          if (linkRequest.error) {
+            console.log(`An error occurred during linking: ${linkRequest.payload.message}`)
+            return;
+          }
+
+          console.log("link received");
+
+          this.linked = linkRequest.payload.link;
+          this.authenticated = linkRequest.payload.authenticate;
+          this.identity = linkRequest.payload.existing
+                            ? Object.assign(this.identity, linkRequest.payload.requested)
+                            : {
+                                apphash: this.apphash,
+                                identityhash: linkRequest.payload.identityhash,
+                                chain: linkRequest.payload.chain,
+                                appName: this.appName,
+                                secret: this.secret,
+                                next_id: next_id,
+                                requested: linkRequest.payload.requested,
+                            };
+
+          this.otp = new OTPAuth.HOTP({
+              issuer: "Beet",
+              label: "BeetAuth",
+              algorithm: "SHA1",
+              digits: 32,
+              counter: 0,
+              secret: OTPAuth.Secret.fromHex(this.identity.secret)
+          });
+        });
+
+        this.socket.on("api", async (msg) => {
+          console.log("socket.api"); // groupCollapsed
+          console.log(msg)
+
+          const relevantRequest = this.requests.find((x) => {
+            return x.id === msg.id || x.id.toString() === msg.id
+          });
+
+          if (!relevantRequest) {
+            console.log(`No relevant requests: ${relevantRequest}`);
+            return;
+          }
+
+          if (msg.error) {
+            if (msg.payload.code == 2) {
+              console.log("msg code 2: reset")
+              this.reset();
+            }
+            relevantRequest.reject(response);
+          }
+
+          let response;
+          if (msg.encrypted) {
+            this.otp.counter = msg.id;
+            let key = this.otp.generate();
+            let decryptedValue;
+            try {
+              decryptedValue = aes.decrypt(msg.payload, key).toString(ENC);
+            } catch (error) {
+              console.log(error);
+              relevantRequest.reject(error);
+            }
+            relevantRequest.resolve(decryptedValue);
+          } else {
+            relevantRequest.resolve(msg.payload);
+          }
+
+          console.groupEnd();
+        });
+
+        this.socket.on("disconnect", async () => {
+          this.connected = false;
+          this.socket = null;
+          this.requests = [];
+          console.log("Websocket closed");
+        });
+
+        this.socket.on("error", (error) => {
+          console.log(`BeetConnection error: ${error}`);
+        });
+
+        this.socket.on("reconnect_error", (error) => {
+          console.log(`reconnect_error: ${error}`);
+          if (this.socket) {
+            this.socket.disconnect()
+          }
+        })
+
+        this.socket.on("connect_error", async () => {
+          console.log(`BeetConnection connect_error`);
+          if (!this.socket) {
+            console.log('no socket')
+            return;
+          }
+
+          let checkedBeet;
+          try {
+            checkedBeet = await checkBeet();
+          } catch (error) {
+            console.error(error)
+          }
+
+          if (checkedBeet) {
+            setTimeout(() => {
+              this.socket.connect();
+            }, 1000);
+          } else {
+            this.socket.disconnect();
+          }
+        });
     }
 
+
     /**
-     * Checks if Beet is connected
+     * Requests to link to a Beet account/id on specified chain
      *
-     * @returns {boolean}
+     * @param {String} chain Symbol of the chain to be linked
+     * @param {String} requestDetails Details to be requested from the user, defaults to account (id and name)
+     * @returns {Object||Null}
      */
-    isConnected() {
-        return this.connected;
+    async link(chain = 'ANY', requestDetails = ["account"]) {
+      if (!this.connected) throw new Error("You must connect to Beet first.");
+
+      if (!this.beetkey) {
+        console.error("no beetkey");
+        return;
+      }
+
+      const privk = ed.utils.randomPrivateKey();
+
+      let secret;
+      try {
+        secret = await ed.getSharedSecret(privk, this.beetkey);
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      this.secret = ed.utils.bytesToHex(secret);
+
+      let next_id = uuidv4();
+      let next_hash;
+      try {
+        next_hash = await sha256(next_id).toString();
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      let pubk;
+      try {
+        pubk = await ed.getPublicKey(privk);
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      let linkObj = {
+        chain: chain,
+        request: requestDetails,
+        pubkey: ed.utils.bytesToHex(pubk),
+        next_hash: next_hash
+      };
+
+      try {
+        this.identity && this.identity.identityhash
+          ? await this.sendRequest('linkRequest', linkObj)
+          : await this.sendRequest('relinkRequest', {...linkObj, identityhash: this.identity.identityhash});
+      } catch (error) {
+        console.debug(
+          this.identity && this.identity.identityhash
+            ? "link rejected"
+            : "relink rejected",
+          error
+        );
+        this.identity = null;
+        //this.reset(); // necessary?
+        return;
+      }
     }
 
     inject(pointOfInjection, options = {sign: true, broadcast: true}) {
