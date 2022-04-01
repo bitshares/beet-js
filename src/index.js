@@ -61,8 +61,9 @@ export const link = async function (chain = 'ANY', beetConnection) {
     return;
   }
 
+  let linkage;
   try {
-    await beetConnection.link(chain);
+    linkage = await beetConnection.link(chain);
   } catch (error) {
     console.log(`Unable to link: ${error}`);
     return;
