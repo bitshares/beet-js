@@ -193,7 +193,7 @@ class BeetConnection {
 
           this.linked = linkRequest.payload.link;
           this.authenticated = linkRequest.payload.authenticate;
-          this.identity = linkRequest.payload.existing
+          this.identity = linkRequest.payload.existing && this.identity
                             ? Object.assign(this.identity, linkRequest.payload.requested)
                             : {
                                 apphash: this.apphash,
@@ -274,7 +274,7 @@ class BeetConnection {
         this.socket.on("reconnect_error", (error) => {
           console.log(`reconnect_error: ${error}`);
           if (this.socket) {
-            this.socket.disconnect()
+            this.socket.disconnect();
           }
         })
 
