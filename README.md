@@ -1,6 +1,6 @@
-# Beet-ESM
+# BeetJS
 
-BeetESM is a client library for interaction with Beet (https://github.com/bitshares/beet).
+BeetJS is a client library for interaction with Beet (https://github.com/bitshares/beet).
 
 ## Installation
 
@@ -18,5 +18,6 @@ Powerful and easy way to integrate Beet is by using injection. Not supported for
 
 List of supported blockchains:
  - BitShares
- - Steem & WhaleShares
+ - Steem
  - BinanceChain
+ - Bitcoin

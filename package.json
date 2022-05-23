@@ -1,9 +1,9 @@
 {
-  "name": "beet-esm",
-  "version": "0.14.0",
+  "name": "beet-js",
+  "version": "0.3.0",
   "type": "module",
   "apiversion": 3,
-  "description": "Beet-esm is a client lib for Beet, a stand-alone key-manager and signing app.",
+  "description": "Beet-js is a client lib for Beet, a stand-alone key-manager and signing app.",
   "main": "src/index.js",
   "scripts": {},
   "keywords": [
@@ -13,16 +13,16 @@
     "bitshares",
     "binance",
     "steem",
-    "eos"
+    "bitcoin"
   ],
   "author": "Bitshares community",
   "license": "MIT",
   "devDependencies": {},
   "dependencies": {
-    "@noble/ed25519": "^1.5.3",
+    "@noble/ed25519": "^1.6.0",
     "crypto-js": "^4.1.1",
-    "otpauth": "^7.0.10",
-    "socket.io-client": "^4.4.1",
+    "otpauth": "^7.1.3",
+    "socket.io-client": "^4.5.1",
     "uuid": "^8.3.2"
   }
 }
