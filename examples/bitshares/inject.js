@@ -94,4 +94,14 @@ let bid = async (
 
     console.log(result);
 };
-init();
+
+bid(
+  connection,
+  wsURL,
+  sellerAccount,
+  amountToSell,
+  soldAsset,
+  amountToBuy,
+  boughtAsset,
+  currentDate
+);
