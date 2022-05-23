@@ -1,13 +1,15 @@
-import beet from 'beet-esm';
+/**
+ * @param {BeetConnection} connection
+ * @param {string} voteTarget
+ */
+async function vote() {
+  let voteResult;
+  try {
+    voteResult = await connection.voteFor({id: voteTarget});
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 
-let init = async () => {
-    try {
-        let app = await beet.get("BitShares Vote Example", "Mozilla", "website.tld", "BTS");
-        let result = await app.BTS.voteFor({id: "1.6.117"});
-        console.log(result);
-    } catch (err) {
-        console.error(err);
-    }
-};
-
-init();
+  console.log(voteResult);
+}

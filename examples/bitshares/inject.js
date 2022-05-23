@@ -1,47 +1,97 @@
-import beet from 'beet-esm';
-import bitshares from 'bitsharesjs';
+import { TransactionBuilder } from 'bitsharesjs';
+import { Apis } from "bitsharesjs-ws";
 
-let init = async () => {
+/**
+ * @param {BeetConnection} connection
+ * @param {string} wsURL
+ * @param {string} sellerAccount
+ * @param {number} amountToSell
+ * @param {string} soldAsset
+ * @param {number} amountToBuy
+ * @param {string} boughtAsset
+ * @param {Date} currentDate
+ */
+let bid = async (
+    connection,
+    wsURL,
+    sellerAccount,
+    amountToSell,
+    soldAsset,
+    amountToBuy,
+    boughtAsset,
+    currentDate
+  ) => {
+    let TXBuilder = connection.inject(TransactionBuilder, {sign: true, broadcast: true});
+
     try {
-        beet.allowLocalhostFallback();
-        // establish connection to beet
-        let app = await beet.get("BitShares Injection Example", "Mozilla", "website.tld", "BTS");
-
-        // inject beet
-        TransactionBuilder = app.BTS.inject(bitshares.TransactionBuilder);
-
-        console.log(app.BTS.getAccount());
-
-        // connect to bitshares blockchain
-        await bitshares.bitshares_ws.Apis.instance(
-            "wss://eu.nodes.bitshares.ws",
-            true,
-            10000,
-            {enableCrypto: false, enableOrders: false},
-            (err) => console.log(err)
-        ).init_promise;
-
-        // build transfer operation
-        let  tr = new TransactionBuilder();
-        let transfer_op = tr.get_type_operation("transfer", {
-            fee: {
-                amount: 0,
-                asset_id: "1.3.0"
-            },
-            from: app.BTS.getAccount().id,
-            to: "1.2.886902",
-            amount: {amount: 100, asset_id: "1.3.0"},
-            memo: undefined
-        });
-        tr.add_operation(
-            transfer_op
-        );
-        await tr.set_required_fees();
-        await tr.update_head_block();
-        tr.add_signer("inject_wif");
-        await tr.broadcast();
-    } catch (err) {
-        console.error(err);
+      await Apis.instance(
+          wsURL,
+          true,
+          10000,
+          {enableCrypto: false, enableOrders: false},
+          (error) => console.log(error),
+      ).init_promise;
+    } catch (error) {
+      console.log(`api instance: ${error}`);
+      return;
     }
+
+    let tr = new TXBuilder();
+
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth(); // for example, 2021
+    currentDate.setMonth(currentMonth + 1);
+
+    tr.add_type_operation(
+      "limit_order_create",
+      {
+          fee: {
+              amount: 0,
+              asset_id: "1.3.0"
+          },
+          seller: sellerAccount,
+          amount_to_sell: {
+            amount: amountToSell,
+            asset_id: soldAsset
+          },
+          min_to_receive: {
+            amount: amountToBuy,
+            asset_id: boughtAsset
+          },
+          fill_or_kill: false,
+          expiration: currentDate//"2023-01-09T09:30:00"
+      }
+    );
+
+    try {
+      await tr.set_required_fees();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    try {
+      await tr.update_head_block();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    try {
+      tr.add_signer("inject_wif");
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    let result;
+    try {
+      result = await tr.broadcast();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    console.log(result);
 };
 init();
