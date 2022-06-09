@@ -237,10 +237,9 @@ class BeetConnection {
               console.log("msg code 2: reset")
               this.reset();
             }
-            relevantRequest.reject(response);
+            relevantRequest.reject(msg.payload);
           }
 
-          let response;
           if (msg.encrypted) {
             this.otp.counter = msg.id;
             let key = this.otp.generate();
