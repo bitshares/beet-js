@@ -26,3 +26,5 @@ let linkToBeet = async function () {
     console.log(connection.identity);
   }
 }
+
+linkToBeet();
