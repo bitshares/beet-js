@@ -1,27 +1,12 @@
-/**
- * @param {BeetConnection} connection
- * @param {string} messageToSign
- */
-async function signMessage(connection, messageToSign) {
-  let signedMessaged;
-  try {
-    signedMessaged = await connection.signMessage(messageToSign);
-  } catch (error) {
-    return;
-  }
-  console.log(signedMessaged)
-}
-
+import { connect, link } from '../../src/index.js';
 
 let run = async function () {
   let connection;
   try {
     connection = await connect(
-      "application name",
-      "Browser type forwarded by app",
-      "application url",
-      null,
-      null
+      "App name",
+      "Browser type",
+      "localhost"
     );
   } catch (error) {
     console.error(error);
@@ -36,9 +21,21 @@ let run = async function () {
     return;
   }
 
+  if (!connection.identity) {
+    console.log("Link rejected");
+    return;
+  }
+
   if (connection.secret) {
-    console.log('Successfully linked')
-    signMessage(connection, 'example message to sign')
+    console.log('Successfully linked. Signing message.');
+    let signedMessaged;
+    try {
+      signedMessaged = await connection.signMessage('example message to sign');
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+    console.log(signedMessaged)
   }
 }
 

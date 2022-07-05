@@ -21,26 +21,48 @@ export const connect = async function (
   existingBeetConnection = null,
   identity = null
 ) {
-  let appHash;
-  try {
-    appHash = sha256(browser + ' ' + origin + ' ' + appName).toString();
-  } catch (error) {
-    console.log(error);
-    return;
-  }
+  return new Promise(async (resolve, reject) => {
+    let appHash;
+    try {
+      appHash = sha256(browser + ' ' + origin + ' ' + appName).toString();
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  
+    let beetConnection;
+    try {
+      beetConnection = existingBeetConnection
+                          ? existingBeetConnection // attempt to reconnect
+                          : new BeetConnection(appName, appHash, browser, origin, identity);
+    } catch (error) {
+      console.log(error);
+      return;
+    }
 
-  let beetConnection;
-  try {
-    beetConnection = existingBeetConnection
-                        ? existingBeetConnection // attempt to reconnect
-                        : new BeetConnection(appName, appHash, browser, origin, identity);
-  } catch (error) {
-    console.log(error);
-    return;
-  }
+    let authToken;
+    try {
+      authToken = await beetConnection.connect('BTS')
+    } catch (error) {
+      console.log(error);
+      return;
+    }
 
-  console.log(`Connected to Beet`)
-  return beetConnection;
+    try {
+      await beetConnection.setAuth(authToken);
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+
+    if (beetConnection.connected) {
+      console.log(`Connected to Beet`)
+    }
+
+    return resolve(beetConnection);
+  });
+
+
 }
 
 /**

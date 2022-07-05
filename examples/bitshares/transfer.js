@@ -1,3 +1,4 @@
+import { connect, link } from '../../src/index.js';
 /**
  * @param {BeetConnection} connection
  * @param {string} targetAccount
@@ -18,11 +19,9 @@ let run = async function () {
   let connection;
   try {
     connection = await connect(
-      "application name",
-      "Browser type forwarded by app",
-      "application url",
-      null,
-      null
+      "App name",
+      "Browser type",
+      "localhost"
     );
   } catch (error) {
     console.error(error);

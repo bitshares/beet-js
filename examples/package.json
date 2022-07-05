@@ -9,7 +9,8 @@
     "license": "MIT",
     "devDependencies": {},
     "dependencies": {
-        "beet-js": "0.14.0"
+        "bitsharesjs": "6.0.0",
+        "bitsharesjs-ws": "^6.0.0"
     }
   }
   

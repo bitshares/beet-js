@@ -26,7 +26,6 @@ class BeetConnection {
       this.identity = identity;
 
       this.id = null; // unused
-
       this.next_identification = null;
 
       this.connected = false; // State of WS Connection to Beet
@@ -34,9 +33,9 @@ class BeetConnection {
       this.linked = false; // Whether this app has linked itself to a Beet account/id
       this.otp = null; // Holds the one-time-password generation for the linked account
       this.requests = []; // Holds pending API request promises to be resolved upon beet response
-
       this.socket = null;
-      this.connect(this.identity ? this.identity : identity);
+
+      //this.connect(this.identity ? this.identity : identity);
     }
 
     /**
@@ -86,8 +85,6 @@ class BeetConnection {
             return reject('No beet ws connection.');
           }
 
-          console.log(`sending ${type} request`)
-
           let request = {type: type};
           if (type == 'api') {
               let ids = await this.fetch_ids();
@@ -100,10 +97,23 @@ class BeetConnection {
               request.id = await uuidv4();
               request.payload = payload;
           }
-
+          
+          console.log(`sending ${type} request`);
           this.requests.push(Object.assign(request, { resolve, reject }));
           this.socket.emit(type, request); // Message Beet wallet
         });
+    }
+
+    /**
+     * Set auth values outwith the socket class
+     * @param {object} authToken
+     */
+    setAuth(authToken) {
+      this.authenticated = authToken.payload.authenticate;
+      this.linked = authToken.payload.link;
+      if (!authToken.payload.link) {
+        this.beetkey = authToken.payload.pub_key;
+      }
     }
 
     /**
@@ -113,6 +123,7 @@ class BeetConnection {
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
     async connect(identity = null) {
+      return new Promise((resolve, reject) => {
         if (!identity) {
           this.reset();
         }
@@ -121,63 +132,60 @@ class BeetConnection {
           this.identity = identity;
         }
 
-        this.socket = io("ws://localhost:60555"); // establish connection
+        const socket = io("ws://localhost:60555"); // establish connection
 
         /**
          * Successfully connected to the Beet wallet
          */
-        this.socket.on("connected", async () => {
-          this.connected = true;
+        socket.on("connect", async () => {
 
-          try {
-            await this.sendRequest(
+            this.connected = true;
+            console.log('received connected socket response');
+
+            let authReq = {
+              type: 'authenticate',
+              id: await uuidv4(),
+              payload: identity !== null && identity.identityhash
+                        ? {
+                            origin: this.origin,
+                            appName: this.appName,
+                            browser: this.browser,
+                            identityhash: identity.identityhash,
+                          }
+                        : {
+                            origin: this.origin,
+                            appName: this.appName,
+                            browser: this.browser,
+                          }
+            };
+
+            socket.emit(
               'authenticate',
-              identity !== null && identity.identityhash
-                ? {
-                    origin: this.origin,
-                    appName: this.appName,
-                    browser: this.browser,
-                    identityhash: identity.identityhash,
-                  }
-                : {
-                    origin: this.origin,
-                    appName: this.appName,
-                    browser: this.browser,
-                  }
-            );
-          } catch (error) {
-            console.error("socket.onopen authenticate rejected", error);
-          }
-        });
-
-        /**
-         * Successful initial handshake with Beet wallet
-         */
-        this.socket.on("authenticated", (auth) => {
-          console.log("Beet authentication complete")
-          this.authenticated = auth.payload.authenticate;
-          this.linked = auth.payload.link;
-          if (this.linked) {
-              this.otp = new OTPAuth.HOTP({
-                  issuer: "Beet",
-                  label: "BeetAuth",
-                  algorithm: "SHA1",
-                  digits: 32,
-                  counter: 0,
-                  secret: OTPAuth.Secret.fromHex(this.identity.secret)
-              });
-              this.identity = Object.assign(this.identity, auth.payload.requested);
-          } else {
-              this.beetkey = auth.payload.pub_key;
-          }
+              authReq,
+              function(auth) {
+                if (auth.payload.link) {
+                  this.otp = new OTPAuth.HOTP({
+                      issuer: "Beet",
+                      label: "BeetAuth",
+                      algorithm: "SHA1",
+                      digits: 32,
+                      counter: 0,
+                      secret: OTPAuth.Secret.fromHex(this.identity.secret)
+                  });
+                  this.identity = Object.assign(this.identity, auth.payload.requested);
+                } else {
+                  this.beetkey = auth.payload.pub_key;
+                }
+                resolve(auth);
+              }
+            ); // Message Beet wallet
         });
 
         /**
          * Response to link request from Beet wallet
          */
-        this.socket.on("link", (linkRequest) => {
-          console.log(linkRequest)
-          const relevantRequest = this.requests.find((request) => {
+         socket.on("link", (linkRequest) => {
+            const relevantRequest = this.requests.find((request) => {
             return request.id === linkRequest.id || request.id.toString() === linkRequest.id
           });
 
@@ -220,8 +228,9 @@ class BeetConnection {
         /**
          * Response to api request from Beet wallet
          */
-        this.socket.on("api", async (msg) => {
-          console.log("socket.api"); // groupCollapsed
+         socket.on("api", async (msg) => {
+          //this.socket.on("api", async (msg) => {
+            console.log("socket.api"); // groupCollapsed
 
           const relevantRequest = this.requests.find((x) => {
             return x.id === msg.id || x.id.toString() === msg.id
@@ -256,21 +265,21 @@ class BeetConnection {
           }
         });
 
-        this.socket.on("disconnect", async () => {
+        socket.on("disconnect", async () => {
           this.connected = false;
           this.socket = null;
           this.requests = [];
           console.log("Websocket closed");
         });
 
-        this.socket.on("reconnect_error", (error) => {
+        socket.on("reconnect_error", (error) => {
           console.log(`reconnect_error: ${error}`);
           if (this.socket) {
             this.socket.disconnect();
           }
         })
 
-        this.socket.on("connect_error", async () => {
+        socket.on("connect_error", async () => {
           console.log(`BeetConnection connect_error`);
           if (!this.socket) {
             console.log('no socket')
@@ -292,6 +301,9 @@ class BeetConnection {
             this.socket.disconnect();
           }
         });
+
+        this.socket = socket;
+      });
     }
 
 
@@ -365,7 +377,6 @@ class BeetConnection {
           error
         );
         this.identity = null;
-        //this.reset(); // necessary?
         return;
       }
 

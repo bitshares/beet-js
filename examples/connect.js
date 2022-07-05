@@ -1,18 +1,18 @@
-import { connect } from 'beet-js';
+import {connect} from '../src/index.js';
 
-let attemptConnection = async function () {
+(async () => {
   let connection;
   try {
     connection = await connect(
-      "application name",
-      "Browser type forwarded by app",
-      "application url",
-      null,
-      null
+      "App name",
+      "Browser type",
+      "localhost"
     );
   } catch (error) {
-    console.error(error)
+    console.log(error);
+    return;
   }
-}
 
-attemptConnection();
+  console.log(connection)
+})();
+

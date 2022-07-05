@@ -1,28 +1,12 @@
-/**
- * @param {BeetConnection} connection
- * @param {string} voteTarget
- */
-async function vote(connection, voteTarget) {
-  let voteResult;
-  try {
-    voteResult = await connection.voteFor({id: voteTarget});
-  } catch (error) {
-    console.log(error);
-    return;
-  }
-
-  console.log(voteResult);
-}
+import { connect, link } from '../../src/index.js';
 
 let run = async function () {
   let connection;
   try {
     connection = await connect(
-      "application name",
-      "Browser type forwarded by app",
-      "application url",
-      null,
-      null
+      "App name",
+      "Browser type",
+      "localhost"
     );
   } catch (error) {
     console.error(error);
@@ -38,8 +22,17 @@ let run = async function () {
   }
 
   if (connection.secret) {
-    console.log('Successfully linked')
-    vote(connection, 'vote_target'); // replace vote_target with valid vote id
+    console.log('Successfully linked, voting...')
+
+    let voteResult;
+    try {
+      voteResult = await connection.voteFor({id: '1.14.0'});
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  
+    console.log(voteResult);
   }
 }
 

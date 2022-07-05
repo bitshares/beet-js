@@ -1,3 +1,4 @@
+import { connect, link } from '../../src/index.js';
 import { TransactionBuilder } from 'bitsharesjs';
 import { Apis } from "bitsharesjs-ws";
 
@@ -18,8 +19,7 @@ let bid = async (
     amountToSell,
     soldAsset,
     amountToBuy,
-    boughtAsset,
-    currentDate
+    boughtAsset
   ) => {
     let TXBuilder = connection.inject(TransactionBuilder, {sign: true, broadcast: true});
 
@@ -28,7 +28,7 @@ let bid = async (
           wsURL,
           true,
           10000,
-          {enableCrypto: false, enableOrders: false},
+          {enableCrypto: false, enableOrders: true},
           (error) => console.log(error),
       ).init_promise;
     } catch (error) {
@@ -59,7 +59,7 @@ let bid = async (
             asset_id: boughtAsset
           },
           fill_or_kill: false,
-          expiration: currentDate//"2023-01-09T09:30:00"
+          expiration: currentDate
       }
     );
 
@@ -99,11 +99,9 @@ let run = async function () {
   let connection;
   try {
     connection = await connect(
-      "application name",
-      "Browser type forwarded by app",
-      "application url",
-      null,
-      null
+      "App name",
+      "Browser type",
+      "localhost"
     );
   } catch (error) {
     console.error(error);
@@ -119,16 +117,14 @@ let run = async function () {
   }
 
   if (connection.secret) {
-    console.log('Successfully linked')
     bid(
       connection,
-      wsURL,
-      sellerAccount,
-      amountToSell,
-      soldAsset,
-      amountToBuy,
-      boughtAsset,
-      currentDate
+      "wss://node.xbts.io/ws",
+      "1.2.1808745",
+      1000,
+      "1.3.0",
+      1000,
+      "1.3.6090"
     );
   }
 }

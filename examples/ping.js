@@ -1,4 +1,4 @@
-import { checkBeet } from 'beet-js';
+import {checkBeet} from '../src/index.js';
 
 let ping = async function () {
     let checkedBeet;
