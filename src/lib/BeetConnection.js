@@ -159,26 +159,25 @@ class BeetConnection {
                           }
             };
 
-            socket.emit(
-              'authenticate',
-              authReq,
-              function(auth) {
-                if (auth.payload.link) {
-                  this.otp = new OTPAuth.HOTP({
-                      issuer: "Beet",
-                      label: "BeetAuth",
-                      algorithm: "SHA1",
-                      digits: 32,
-                      counter: 0,
-                      secret: OTPAuth.Secret.fromHex(this.identity.secret)
-                  });
-                  this.identity = Object.assign(this.identity, auth.payload.requested);
-                } else {
-                  this.beetkey = auth.payload.pub_key;
-                }
-                resolve(auth);
+            socket.emit('authenticate', authReq);
+            
+            socket.on('authenticated', (auth) => {
+              console.log('socket: authenticated')
+              if (auth.payload.link) {
+                this.otp = new OTPAuth.HOTP({
+                    issuer: "Beet",
+                    label: "BeetAuth",
+                    algorithm: "SHA1",
+                    digits: 32,
+                    counter: 0,
+                    secret: OTPAuth.Secret.fromHex(this.identity.secret)
+                });
+                this.identity = Object.assign(this.identity, auth.payload.requested);
+              } else {
+                this.beetkey = auth.payload.pub_key;
               }
-            ); // Message Beet wallet
+              resolve(auth);
+            }); // Message Beet wallet
         });
 
         /**

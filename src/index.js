@@ -112,9 +112,11 @@ export const checkBeet = async function () {
       socket.disconnect();
       resolve(false);
     });
+    
+    socket.emit("ping", 'pong');
 
-    socket.emit("ping", (response) => {
-      resolve(response ? true : false);
+    socket.on("pong", (response) => {
+      resolve(response);
     });
   });
 }
