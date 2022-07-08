@@ -34,8 +34,6 @@ class BeetConnection {
       this.otp = null; // Holds the one-time-password generation for the linked account
       this.requests = []; // Holds pending API request promises to be resolved upon beet response
       this.socket = null;
-
-      //this.connect(this.identity ? this.identity : identity);
     }
 
     /**
@@ -228,8 +226,7 @@ class BeetConnection {
          * Response to api request from Beet wallet
          */
          socket.on("api", async (msg) => {
-          //this.socket.on("api", async (msg) => {
-            console.log("socket.api"); // groupCollapsed
+          console.log("socket.api"); // groupCollapsed
 
           const relevantRequest = this.requests.find((x) => {
             return x.id === msg.id || x.id.toString() === msg.id

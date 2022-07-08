@@ -26,9 +26,9 @@ let run = async function () {
     return;
   }
 
+  let signedMessaged;
   if (connection.secret) {
     console.log('Successfully linked. Signing message.');
-    let signedMessaged;
     try {
       signedMessaged = await connection.signMessage('example message to sign');
     } catch (error) {
@@ -36,6 +36,19 @@ let run = async function () {
       return;
     }
     console.log(signedMessaged)
+  }
+
+  console.log("Now verifying the above signed message")
+  
+  let verifiedMessage;
+  if (signedMessaged) {
+    try {
+      verifiedMessage = await connection.verifyMessage(JSON.stringify(signedMessaged));
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+    console.log(verifiedMessage ? 'Valid message signature' : 'Invalid message signature')
   }
 }
 
