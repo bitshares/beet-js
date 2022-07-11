@@ -5,7 +5,9 @@
   "apiversion": 3,
   "description": "Beet-js is a client lib for Beet, a stand-alone key-manager and signing app.",
   "main": "src/index.js",
-  "scripts": {},
+  "scripts": {
+    "webpack": "webpack"
+  },
   "keywords": [
     "blockchain",
     "cryptocurrency",
@@ -17,7 +19,10 @@
   ],
   "author": "Bitshares community",
   "license": "MIT",
-  "devDependencies": {},
+  "devDependencies": {
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
+  },
   "dependencies": {
     "@noble/ed25519": "^1.6.0",
     "crypto-js": "^4.1.1",
