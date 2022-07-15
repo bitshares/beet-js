@@ -78,6 +78,13 @@ let bid = async (
     }
 
     try {
+      await tr.set_expire_seconds(2630000); // 1 month exipiry
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+    
+    try {
       tr.add_signer("inject_wif");
     } catch (error) {
       console.error(error);
