@@ -40,9 +40,28 @@ export const connect = async function (
       return;
     }
 
+    let ssl;
+    try {
+      ssl = await checkBeet(true);
+    } catch (error) {
+      console.log(`checkBeet: ${error}`);
+    }
+
+    let http;
+    try {
+      http = await checkBeet(false);
+    } catch (error) {
+      console.log(`checkBeet: ${error}`);
+    }
+
+    if (!ssl && !http) {
+      console.log("Beet is offline, launch it then try again.");
+      return reject("Beet is offline");
+    }
+
     let authToken;
     try {
-      authToken = await beetConnection.connect('BTS')
+      authToken = await beetConnection.connect('BTS', ssl ?? false)
     } catch (error) {
       console.log(error);
       return;
@@ -94,21 +113,22 @@ export const link = async function (chain = 'ANY', beetConnection) {
 
 /**
  * Checks for a Beet web socket response
- *
+ * @param {boolean} enableSSL
  * @returns {boolean} Resolves to true (if installed) and false (not installed)
 */
-export const checkBeet = async function () {
+export const checkBeet = async function (enableSSL = true) {
   return new Promise((resolve, reject) => {
     let socket;
     try {
-      socket = io("ws://localhost:60555");
+      socket = enableSSL
+                ? io("wss://localhost:60555", { secure: true, rejectUnauthorized: false })
+                : io("ws://localhost:60555");
     } catch (error) {
       console.log(error);
       resolve(false);
     }
 
-    socket.on("connect_error", () => {
-      console.log("connect_error");
+    socket.on("connect_error", (error) => {
       socket.disconnect();
       resolve(false);
     });

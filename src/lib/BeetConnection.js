@@ -116,11 +116,12 @@ class BeetConnection {
 
     /**
      * Connects to Beet instance. If one of the existing linked identities (returned by init()) is passed, it also tries to enable that link
-     *
-     * @param identity
+     * 
+     * @param {Object} identity
+     * @param {Boolean} ssl
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
-    async connect(identity = null) {
+    async connect(identity = null, ssl = true) {
       return new Promise((resolve, reject) => {
         if (!identity) {
           this.reset();
@@ -130,7 +131,16 @@ class BeetConnection {
           this.identity = identity;
         }
 
-        const socket = io("ws://localhost:60555"); // establish connection
+        let socket;
+        try {
+          socket = ssl
+                    ? io("wss://localhost:60555", { secure: true, rejectUnauthorized: false })
+                    : io("ws://localhost:60555");
+        } catch (error) {
+          console.log(error);
+          return reject(false);
+        }
+
 
         /**
          * Successfully connected to the Beet wallet
@@ -275,27 +285,14 @@ class BeetConnection {
           }
         })
 
-        socket.on("connect_error", async () => {
-          console.log(`BeetConnection connect_error`);
+        socket.on("connect_error", async (error) => {
+          console.log(`BeetConnection connect_error ${error}`);
           if (!this.socket) {
             console.log('no socket')
             return;
           }
 
-          let checkedBeet;
-          try {
-            checkedBeet = await checkBeet();
-          } catch (error) {
-            console.error(error)
-          }
-
-          if (checkedBeet) {
-            setTimeout(() => {
-              this.socket.connect();
-            }, 1000);
-          } else {
-            this.socket.disconnect();
-          }
+          this.socket.disconnect();
         });
 
         this.socket = socket;

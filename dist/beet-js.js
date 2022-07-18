@@ -9809,11 +9809,12 @@ class BeetConnection_BeetConnection {
 
     /**
      * Connects to Beet instance. If one of the existing linked identities (returned by init()) is passed, it also tries to enable that link
-     *
-     * @param identity
+     * 
+     * @param {Object} identity
+     * @param {Boolean} ssl
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
-    async connect(identity = null) {
+    async connect(identity = null, ssl = true) {
       return new Promise((resolve, reject) => {
         if (!identity) {
           this.reset();
@@ -9823,7 +9824,7 @@ class BeetConnection_BeetConnection {
           this.identity = identity;
         }
 
-        const socket = io("ws://localhost:60555"); // establish connection
+        const socket = io(ssl ? "wss://127.0.0.1:60555" : "ws://127.0.0.1:60555");
 
         /**
          * Successfully connected to the Beet wallet
@@ -10438,9 +10439,16 @@ const connect = async function (
       return;
     }
 
+    let enableSSL;
+    try {
+      enableSSL = src_checkBeet(true);
+    } catch (error) {
+      console.log(error);
+    }
+
     let authToken;
     try {
-      authToken = await beetConnection.connect('BTS')
+      authToken = await beetConnection.connect('BTS', enableSSL)
     } catch (error) {
       console.log(error);
       return;
@@ -10492,14 +10500,14 @@ const src_link = async function (chain = 'ANY', beetConnection) {
 
 /**
  * Checks for a Beet web socket response
- *
+ * @param {boolean} enableSSL
  * @returns {boolean} Resolves to true (if installed) and false (not installed)
 */
-const src_checkBeet = async function () {
+const src_checkBeet = async function (enableSSL = true) {
   return new Promise((resolve, reject) => {
     let socket;
     try {
-      socket = io("ws://localhost:60555");
+      socket = io(enableSSL ? "wss://127.0.0.1:60555" : "ws://127.0.0.1:60555");
     } catch (error) {
       console.log(error);
       resolve(false);
@@ -10514,7 +10522,7 @@ const src_checkBeet = async function () {
     socket.emit("ping", 'pong');
 
     socket.on("pong", (response) => {
-      resolve(response);
+      resolve(true);
     });
   });
 }

@@ -47,10 +47,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@noble/ed25519@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.npmjs.org/@noble/ed25519/-/ed25519-1.6.0.tgz"
-  integrity sha512-UKju89WV37IUALIMfKhKW3psO8AqmrE/GvH6QbPKjzolQ98zM7WmGUeY+xdIgSf5tqPFf75ZCYMgym6E9Jsw3Q==
+"@noble/ed25519@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@noble/ed25519/-/ed25519-1.6.1.tgz#bad3e77008c7825a0859304ab8b4177703cd438d"
+  integrity sha512-Gptpue6qPmg7p1E5LBO5GDtXw5WMc2DVtUmu4EQequOcoCvum1dT9sY6s9M8aSJWq9YopCN4jmTOAvqMdw3q7w==
 
 "@socket.io/component-emitter@~3.1.0":
   version "3.1.0"
@@ -570,10 +570,10 @@ node-releases@^2.0.5:
   resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-2.0.6.tgz#8a7088c63a55e493845683ebf3c828d8c51c5503"
   integrity sha512-PiVXnNuFm5+iYkLBNeq5211hvO38y63T0i2KKh2KnUs3RpzJ+JtODFjkD8yjLwnDkTYF1eKXheUwdssR+NRZdg==
 
-otpauth@^7.1.3:
-  version "7.1.3"
-  resolved "https://registry.npmjs.org/otpauth/-/otpauth-7.1.3.tgz"
-  integrity sha512-oHIdlmPt4i1+ptRh/0gQGo8mmew58pY9Q2wbYfTprZ9ABKAZgCvS0p+3MxjubT5v4UAqmjLuZ5paBa0yJQbE/g==
+otpauth@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.yarnpkg.com/otpauth/-/otpauth-8.0.1.tgz#41eefecea6c928ba90d2edd10252965164569bc8"
+  integrity sha512-m39abRFJ3XMchK6Or9TOxErai3X8pk4/DpArOygYguBRYtRaVT53hL6+PV5BxYWVkcnIkPQqJg36ijvD8FvqSA==
   dependencies:
     jssha "~3.2.0"
 
