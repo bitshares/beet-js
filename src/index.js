@@ -3,6 +3,9 @@ import BeetConnection from "./lib/BeetConnection.js";
 const allowedChains = ["ANY", "BTS", "BNB_TEST", "STEEM", "BTC"];
 import { io } from "socket.io-client";
 
+let httpPort = 60555;
+let httpsPort = 60554;
+
 /**
  * Gets an instance of a beet connected application, and does the identity handling for the requested chain.
  *
@@ -42,16 +45,16 @@ export const connect = async function (
 
     let ssl;
     try {
-      ssl = await checkBeet(true);
+      ssl = await checkBeet(true, httpsPort);
     } catch (error) {
-      console.log(`checkBeet: ${error}`);
+      console.log(`checkBeet ssl: ${error}`);
     }
 
     let http;
     try {
-      http = await checkBeet(false);
+      http = await checkBeet(false, httpPort);
     } catch (error) {
-      console.log(`checkBeet: ${error}`);
+      console.log(`checkBeet http: ${error}`);
     }
 
     if (!ssl && !http) {
@@ -61,10 +64,21 @@ export const connect = async function (
 
     let authToken;
     try {
-      authToken = await beetConnection.connect('BTS', ssl ?? false)
+      authToken = await beetConnection.connect(
+        'BTS',
+        ssl ? true : false,
+        ssl ? httpsPort : httpPort
+      )
     } catch (error) {
-      console.log(error);
-      return;
+      console.log(`${ssl ? 'https' : 'http'} connection attempt error: ${error}`);
+    }
+
+    if (!authToken) { // fallback to http
+      try {
+        authToken = await beetConnection.connect('BTS', false, httpPort)
+      } catch (error) {
+        console.log(`http connection attempt error: ${error}`);
+      }
     }
 
     try {
@@ -116,13 +130,14 @@ export const link = async function (chain = 'ANY', beetConnection) {
  * @param {boolean} enableSSL
  * @returns {boolean} Resolves to true (if installed) and false (not installed)
 */
-export const checkBeet = async function (enableSSL = true) {
+export const checkBeet = async function (enableSSL = true, port = 60554) {
   return new Promise((resolve, reject) => {
     let socket;
     try {
       socket = enableSSL
-                ? io("wss://localhost:60555", { secure: true, rejectUnauthorized: false })
-                : io("ws://localhost:60555");
+                //? io(`wss://localhost:${port}`, { secure: true, rejectUnauthorized: false })
+                ? io(`wss://localhost:${port}`, {transports: ['websocket'], rejectUnauthorized: false})
+                : io(`ws://localhost:${port}`);
     } catch (error) {
       console.log(error);
       resolve(false);

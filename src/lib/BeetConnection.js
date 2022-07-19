@@ -121,7 +121,7 @@ class BeetConnection {
      * @param {Boolean} ssl
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
-    async connect(identity = null, ssl = true) {
+    async connect(identity = null, ssl = true, port) {
       return new Promise((resolve, reject) => {
         if (!identity) {
           this.reset();
@@ -134,8 +134,8 @@ class BeetConnection {
         let socket;
         try {
           socket = ssl
-                    ? io("wss://localhost:60555", { secure: true, rejectUnauthorized: false })
-                    : io("ws://localhost:60555");
+                    ? io(`wss://localhost:${port}`, { secure: true, rejectUnauthorized: false })
+                    : io(`ws://localhost:${port}`);
         } catch (error) {
           console.log(error);
           return reject(false);
@@ -643,6 +643,29 @@ class BeetConnection {
         message = await this.sendRequest('api', {
             method: 'signMessage',
             params: text
+        });
+      } catch (error) {
+        console.log(error);
+        return;
+      }
+
+      if (message) {
+        return JSON.parse(message);
+      }
+    }
+
+    /**
+     * Sign an nft_object for NFTs on the Bitshares network
+     *
+     * @param {Object} nft_object
+     * @returns {Promise} Resolving is done by Beet
+     */
+     async signNFT(nft_object) {
+      let message;
+      try {
+        message = await this.sendRequest('api', {
+            method: 'signNFT',
+            params: JSON.stringify(nft_object)
         });
       } catch (error) {
         console.log(error);
