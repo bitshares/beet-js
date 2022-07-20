@@ -9479,7 +9479,7 @@ class BeetConnection_BeetConnection {
      * @param {Boolean} ssl
      * @returns {Promise} Resolves to false if not connected after timeout, or to result of 'authenticate' Beet call
      */
-    async connect(identity = null, ssl = true) {
+    async connect(identity = null, ssl = true, port) {
       return new Promise((resolve, reject) => {
         if (!identity) {
           this.reset();
@@ -9492,8 +9492,8 @@ class BeetConnection_BeetConnection {
         let socket;
         try {
           socket = ssl
-                    ? io("wss://localhost:60554", { secure: true, rejectUnauthorized: false })
-                    : io("ws://localhost:60555");
+                    ? io(`wss://local.get-beet.io:${port}/`, { secure: true })
+                    : io(`ws://localhost:${port}`);
         } catch (error) {
           console.log(error);
           return reject(false);
@@ -10128,7 +10128,7 @@ const connect = async function (
 
     let ssl;
     try {
-      ssl = await checkBeet(true, 60554);
+      ssl = await checkBeet(true, httpsPort);
     } catch (error) {
       console.log(`checkBeet ssl: ${error}`);
     }
