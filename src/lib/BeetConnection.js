@@ -134,7 +134,7 @@ class BeetConnection {
         let socket;
         try {
           socket = ssl
-                    ? io(`wss://local.get-beet.io:${port}/`, { secure: true })
+                    ? io(`wss://local.get-beet.io:${port}/`, { secure: true, rejectUnauthorized: false })
                     : io(`ws://localhost:${port}`);
         } catch (error) {
           console.log(error);

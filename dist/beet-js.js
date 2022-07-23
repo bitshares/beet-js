@@ -10218,8 +10218,7 @@ const checkBeet = async function (enableSSL = true, port = 60554) {
     let socket;
     try {
       socket = enableSSL
-                //? io(`wss://localhost:${port}`, { secure: true, rejectUnauthorized: false })
-                ? io(`wss://localhost:${port}`, {transports: ['websocket'], rejectUnauthorized: false})
+                ? io(`wss://local.get-beet.io:${port}/`, {transports: ['websocket'], rejectUnauthorized: false})
                 : io(`ws://localhost:${port}`);
     } catch (error) {
       console.log(error);
