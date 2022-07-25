@@ -36,7 +36,6 @@ let run = async function () {
         holder_license: 'license 1',
         license: 'license 2',
         narrative: 'narrative',
-        sig_pubkey_or_address: 'publicMemoKey',
         title: 'NFT title',
         tags: 'tag,test',
         type: 'NFT/ART/VISUAL'
