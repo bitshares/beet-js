@@ -65,7 +65,7 @@ export const connect = async function (
     let authToken;
     try {
       authToken = await beetConnection.connect(
-        'BTS',
+        identity,
         ssl ? true : false,
         ssl ? httpsPort : httpPort
       )
@@ -75,7 +75,7 @@ export const connect = async function (
 
     if (!authToken) { // fallback to http
       try {
-        authToken = await beetConnection.connect('BTS', false, httpPort)
+        authToken = await beetConnection.connect(identity, false, httpPort)
       } catch (error) {
         console.log(`http connection attempt error: ${error}`);
       }
