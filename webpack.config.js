@@ -1,12 +1,17 @@
-const path = require('path');
-const webpack = require('webpack');
+import path from 'path';
+import webpack from 'webpack';
 
-const config = module.exports = {
+const config = {
     mode: "production",
-    entry: path.resolve('./src/index.js'),
     output: {
-        path: path.resolve('./dist'),
-        filename: 'beet-js.js', //ignored?
+      path: path.resolve('./dist'),
+      filename: 'beet-js.js',
+    },
+    optimization: {
+      minimize: true,
+      minimizer: [() => ({ terserOptions: { mangle: false } })]
     },
     profile: true
 };
+
+export default config;

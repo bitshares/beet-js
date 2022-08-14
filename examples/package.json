@@ -1,0 +1,16 @@
+{
+    "name": "beet node.js example",
+    "version": "0.1.0",
+    "type": "module",
+    "apiversion": 3,
+    "description": "Beet-js is a client lib for Beet, a stand-alone key-manager and signing app.",
+    "scripts": {},
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {},
+    "dependencies": {
+        "bitsharesjs": "6.0.0",
+        "bitsharesjs-ws": "^6.0.0"
+    }
+  }
+  
