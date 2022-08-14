@@ -172,6 +172,7 @@ class BeetConnection {
             socket.on('authenticated', (auth) => {
               console.log('socket: authenticated')
               if (auth.payload.link) {
+                console.log(`authenticated: link`)
                 this.otp = new OTPAuth.HOTP({
                     issuer: "Beet",
                     label: "BeetAuth",
@@ -182,6 +183,8 @@ class BeetConnection {
                 });
                 this.identity = Object.assign(this.identity, auth.payload.requested);
               } else {
+                console.log({auth})
+
                 this.beetkey = auth.payload.pub_key;
               }
               resolve(auth);
@@ -211,7 +214,7 @@ class BeetConnection {
           this.identity = linkRequest.payload.existing && this.identity
                             ? Object.assign(this.identity, linkRequest.payload.requested)
                             : {
-                                apphash: this.apphash,
+                                apphash: this.appHash,
                                 identityhash: linkRequest.payload.identityhash,
                                 chain: linkRequest.payload.chain,
                                 appName: this.appName,
@@ -355,6 +358,7 @@ class BeetConnection {
 
       let sentRequest;
       try {
+        console.log(this)
         if (this.identity && this.identity.identityhash) {
           console.log('sending relink request')
           sentRequest = await this.sendRequest('relinkRequest', {...linkObj, identityhash: this.identity.identityhash});

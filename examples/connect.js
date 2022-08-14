@@ -4,7 +4,7 @@ import {connect} from '../src/index.js';
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "ConnectExample",
       "Browser type",
       "localhost"
     );

@@ -4,7 +4,7 @@ let run = async function () {
     let connection;
     try {
       connection = await connect(
-        "App name",
+        "signNFTExample",
         "Browser type",
         "localhost"
       );

@@ -106,7 +106,7 @@ let run = async function () {
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "InjectExample",
       "Browser type",
       "localhost"
     );

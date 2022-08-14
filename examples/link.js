@@ -1,10 +1,12 @@
 import {connect, link} from '../src/index.js';
 
+
+
 let linkToBeet = async function () {
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "LinkExample",
       "Browser type",
       "localhost"
     );

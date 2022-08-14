@@ -1,5 +1,5 @@
 {
-    "name": "beet node.js example",
+    "name": "examples",
     "version": "0.1.0",
     "type": "module",
     "apiversion": 3,
@@ -10,7 +10,8 @@
     "devDependencies": {},
     "dependencies": {
         "bitsharesjs": "6.0.0",
-        "bitsharesjs-ws": "^6.0.0"
+        "bitsharesjs-ws": "^6.0.0",
+        "lowdb": "^3.0.0",
+        "prompts": "^2.4.2"
     }
-  }
-  
+}
