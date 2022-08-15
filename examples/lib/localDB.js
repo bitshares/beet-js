@@ -26,37 +26,48 @@ async function readData(appName) {
             return resolve();
         }
     
-        let storedIdentity = db.data.identities.filter(x => x.appName === appName);
-        let idPrompts = [{
-            type: 'confirm',
-            name: 'confirm',
-            message: 'Do you want to relink?',
-            initial: true
-        }];
+        let storedIdentities = db.data.identities.filter(x => x.appName === appName);
     
-        if (storedIdentity.length > 1) {
-            idPrompts.push({
-                type: 'multiselect',
-                name: 'identity',
-                message: 'Which account do you want to relink with?',
-                choices: storedIdentity.identities,
-            })
+        const onCancel = prompt => {
+            return reject();
         }
 
         let response;
         try {
-            response = await prompts(idPrompts);
+            response = await prompts(
+                [
+                    {
+                        type: 'confirm',
+                        name: 'confirm',
+                        message: 'Do you want to relink?',
+                        initial: true
+                    },
+                    {
+                        type: prev => prev === true ? 'select' : null,
+                        name: 'identityhash',
+                        message: 'Which account do you want to relink with?',
+                        choices: storedIdentities.map(id => {
+                            return {
+                                title: id.requested.account.name,
+                                value: id.identityhash
+                            }
+                        }),
+                    }
+                ],
+                { onCancel }
+            );
         } catch (error) {
             console.log(error);
             return resolve();
         }
     
-        if (!response || !response.confirm || !storedIdentity.length) {
+        if (!response || !response.confirm || !storedIdentities.length) {
             // No stored || relink rejected
             return resolve();
         }       
 
-        return resolve(response.identity ?? storedIdentity[0]);
+        let chosenID = storedIdentities.find(x => x.identityhash === response.identityhash)
+        return resolve(chosenID);
     });
 }
 
@@ -65,7 +76,7 @@ async function storeData(data) {
         await db.read()
         db.data ||= { identities: [] }
         let tempIDs = db.data.identities;
-
+        
         let filteredIDs = tempIDs.filter(x => x.identityhash !== data.identityhash);
         filteredIDs.push(data);
         db.data.identities = filteredIDs;

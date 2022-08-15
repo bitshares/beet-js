@@ -1,5 +1,5 @@
 import { connect, link } from '../../src/index.js';
-import { readData, storeData } from './localDB.js'
+import { readData, storeData } from '../lib/localDB.js'
 
 async function getAccount(connection) {
   let requestedAccount;
@@ -8,14 +8,16 @@ async function getAccount(connection) {
   } catch (error) {
     return;
   }
-  console.log(requestedAccount)
+  //console.log(requestedAccount)
+
+  if (connection.identity) {
+    storeData(connection.identity)
+  }
 }
 
 let run = async function () {
   let appName = "getAccountExample";
   let identity = await readData(appName);
-
-  console.log({identity})
 
   let connection;
   try {
@@ -31,6 +33,7 @@ let run = async function () {
     return;
   }
 
+
   let linkAttempt;
   try {
     linkAttempt = await link("BTS", connection);
@@ -39,11 +42,11 @@ let run = async function () {
     return;
   }
 
-  if (connection.secret) {
-    console.log(connection)
-    getAccount(connection);
-    storeData(connection.identity)
+  if (!connection.secret) {
+    return;
   }
+
+  await getAccount(connection);
 }
 
 run();
