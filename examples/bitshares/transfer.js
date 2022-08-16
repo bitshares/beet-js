@@ -18,7 +18,7 @@ async function transfer(connection, targetAccount, amountInSatoshi, assetId) {
 }
 
 let run = async function () {
-  let identity = await readData(appName);
+  let identity = await readData("TransferExample");
 
   let connection;
   try {

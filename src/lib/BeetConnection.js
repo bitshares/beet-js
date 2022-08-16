@@ -170,7 +170,6 @@ class BeetConnection {
             
             socket.on('authenticated', (auth) => {
               console.log('socket: authenticated')
-              console.log({auth})
               if (auth.payload.link) {
                 console.log(`authenticated: link`)
                 this.otp = new OTPAuth.HOTP({
@@ -183,8 +182,6 @@ class BeetConnection {
                 });
                 this.identity = Object.assign(this.identity, auth.payload.requested);
               } else {
-                //console.log({auth})
-
                 this.beetkey = auth.payload.pub_key;
               }
               resolve(auth);

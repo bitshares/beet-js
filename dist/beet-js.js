@@ -9528,7 +9528,6 @@ class BeetConnection_BeetConnection {
             
             socket.on('authenticated', (auth) => {
               console.log('socket: authenticated')
-              console.log({auth})
               if (auth.payload.link) {
                 console.log(`authenticated: link`)
                 this.otp = new OTPAuth.HOTP({
@@ -9541,8 +9540,6 @@ class BeetConnection_BeetConnection {
                 });
                 this.identity = Object.assign(this.identity, auth.payload.requested);
               } else {
-                //console.log({auth})
-
                 this.beetkey = auth.payload.pub_key;
               }
               resolve(auth);
@@ -9580,7 +9577,6 @@ class BeetConnection_BeetConnection {
                                   next_id: this.next_identification,
                                   requested: linkRequest.payload.requested,
                               };
-
 
             this.otp = new OTPAuth.HOTP({
                 issuer: "Beet",
@@ -10131,14 +10127,6 @@ const connect = async function (
       return;
     }
   
-    console.log({
-      appName,
-      browser,
-      origin,
-      existingBeetConnection,
-      identity
-    });
-
     let beetConnection;
     try {
       beetConnection = existingBeetConnection

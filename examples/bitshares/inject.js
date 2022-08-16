@@ -107,7 +107,7 @@ let bid = async (
 };
 
 let run = async function () {
-  let identity = await readData(appName);
+  let identity = await readData("InjectExample");
 
   let connection;
   try {

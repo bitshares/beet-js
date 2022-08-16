@@ -16,13 +16,12 @@ async function getAccount(connection) {
 }
 
 let run = async function () {
-  let appName = "getAccountExample";
-  let identity = await readData(appName);
+  let identity = await readData("getAccountExample");
 
   let connection;
   try {
     connection = await connect(
-      appName,
+      "getAccountExample",
       "Browser type",
       "localhost",
       null,

@@ -33,14 +33,6 @@ export const connect = async function (
       return;
     }
   
-    console.log({
-      appName,
-      browser,
-      origin,
-      existingBeetConnection,
-      identity
-    });
-
     let beetConnection;
     try {
       beetConnection = existingBeetConnection

@@ -2,7 +2,7 @@ import { connect, link } from '../../src/index.js';
 import { readData, storeData } from '../lib/localDB.js'
 
 let run = async function () {
-  let identity = await readData(appName);
+  let identity = await readData("VoteExample");
 
   let connection;
   try {
