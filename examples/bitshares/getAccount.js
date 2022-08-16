@@ -8,7 +8,7 @@ async function getAccount(connection) {
   } catch (error) {
     return;
   }
-  //console.log(requestedAccount)
+  console.log(requestedAccount)
 
   if (connection.identity) {
     storeData(connection.identity)
