@@ -1,12 +1,17 @@
 import { connect, link } from '../../src/index.js';
+import { readData, storeData } from '../lib/localDB.js'
 
 let run = async function () {
+  let identity = await readData("VoteExample");
+
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "VoteExample",
       "Browser type",
-      "localhost"
+      "localhost",
+      null,
+      identity ?? null
     );
   } catch (error) {
     console.error(error);

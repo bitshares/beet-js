@@ -1,12 +1,17 @@
 import { connect, link } from '../../src/index.js';
+import { readData, storeData } from '../lib/localDB.js'
 
 let run = async function () {
+  let identity = await readData("signedMessageExample");
+
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "signedMessageExample",
       "Browser type",
-      "localhost"
+      "localhost",
+      null,
+      identity ?? null
     );
   } catch (error) {
     console.error(error);
@@ -50,6 +55,8 @@ let run = async function () {
     }
     console.log(verifiedMessage ? 'Valid message signature' : 'Invalid message signature')
   }
+
+  storeData(connection.identity)
 }
 
 run();

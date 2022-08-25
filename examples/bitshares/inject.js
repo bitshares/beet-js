@@ -1,4 +1,5 @@
 import { connect, link } from '../../src/index.js';
+import { readData, storeData } from '../lib/localDB.js'
 import { TransactionBuilder } from 'bitsharesjs';
 import { Apis } from "bitsharesjs-ws";
 
@@ -100,15 +101,22 @@ let bid = async (
     }
 
     console.log(result);
+    if (connection.identity) {
+      storeData(connection.identity)
+    }
 };
 
 let run = async function () {
+  let identity = await readData("InjectExample");
+
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "InjectExample",
       "Browser type",
-      "localhost"
+      "localhost",
+      null,
+      identity ?? null
     );
   } catch (error) {
     console.error(error);

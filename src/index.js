@@ -14,7 +14,7 @@ let httpsPort = 60554;
  * @param {String} origin (website url)
  * @param {String} chain (Target blockchain)
  * @param {BeetConnection} existingBeetConnection (Provide stored connection)
- * @param {boolean} identity
+ * @param {Object} identity
  * @returns {BeetConnection}
 */
 export const connect = async function (

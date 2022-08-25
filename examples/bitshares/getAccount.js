@@ -1,4 +1,5 @@
 import { connect, link } from '../../src/index.js';
+import { readData, storeData } from '../lib/localDB.js'
 
 async function getAccount(connection) {
   let requestedAccount;
@@ -8,20 +9,29 @@ async function getAccount(connection) {
     return;
   }
   console.log(requestedAccount)
+
+  if (connection.identity) {
+    storeData(connection.identity)
+  }
 }
 
 let run = async function () {
+  let identity = await readData("getAccountExample");
+
   let connection;
   try {
     connection = await connect(
-      "App name",
+      "getAccountExample",
       "Browser type",
-      "localhost"
+      "localhost",
+      null,
+      identity ?? null
     );
   } catch (error) {
     console.error(error);
     return;
   }
+
 
   let linkAttempt;
   try {
@@ -31,9 +41,11 @@ let run = async function () {
     return;
   }
 
-  if (connection.secret) {
-    getAccount(connection);
+  if (!connection.secret) {
+    return;
   }
+
+  await getAccount(connection);
 }
 
 run();
