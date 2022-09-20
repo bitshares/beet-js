@@ -13,7 +13,8 @@ async function transfer(connection, targetAccount, amountInSatoshi, assetId) {
       amount: {
         satoshis: amountInSatoshi,
         asset_id: assetId
-      }
+      },
+      memo: 'TEST MEMO'
   })
 }
 
@@ -36,7 +37,7 @@ let run = async function () {
 
   let linkAttempt;
   try {
-    linkAttempt = await link("BTS", connection);
+    linkAttempt = await link("BTS_TEST", connection);
   } catch (error) {
     console.error(error)
     return;
@@ -44,7 +45,7 @@ let run = async function () {
 
   if (connection.secret) {
     console.log('Successfully linked')
-    transfer(connection, 'sschiessl', 1, '1.3.0')
+    transfer(connection, 'nfttestnet2', 1, '1.3.0')
   }
 }
 
