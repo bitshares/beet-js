@@ -6,7 +6,11 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "witness_create", // operation name
-    {}
+    {
+      witness_account: "1.2.",
+      url: "",
+      block_signing_key: ""
+    }
   );
 }
 

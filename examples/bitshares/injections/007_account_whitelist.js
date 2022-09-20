@@ -6,7 +6,12 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "account_whitelist", // operation name
-    {}
+    {
+      authorizing_account: "1.2.",
+      account_to_list: "1.2.",
+      new_listing: 0,
+      extensions: []
+    }
   );
 }
 

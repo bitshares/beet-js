@@ -6,7 +6,20 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "asset_update_bitasset", // operation name
-    {}
+    {
+      issuer: "1.2.",
+      asset_to_update: "1.3.",
+      new_options: {
+        feed_lifetime_sec: 100000,
+        minimum_feeds: 1,
+        force_settlement_delay_sec: 60,
+        force_settlement_offset_percent: 0,
+        maximum_force_settlement_volume: 5,
+        short_backing_asset: "1.3.",
+        extensions: []
+      },
+      extensions: []
+    }
   );
 }
 

@@ -6,7 +6,21 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "asset_global_settle", // operation name
-    {}
+    {
+      issuer: "1.2.",
+      asset_to_settle: "1.3.",
+      settle_price: {
+        base: {
+          amount: 1,
+          asset_id: "1.3."
+        },
+        quote: {
+          amount: 1,
+          asset_id: "1.3."
+        }
+    },
+      extensions: []
+    }
   );
 }
 

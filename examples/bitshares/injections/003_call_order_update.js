@@ -6,7 +6,18 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "call_order_update", // operation name
-    {}
+    {
+      funding_account: "1.2.",
+      delta_collateral: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      delta_debt: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 
