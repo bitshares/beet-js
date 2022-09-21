@@ -21,7 +21,5 @@ let run = async function () {
   );
 }
 
-/*
-run();
-*/
 
+run();

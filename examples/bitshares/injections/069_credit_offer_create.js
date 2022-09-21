@@ -35,7 +35,4 @@ let run = async function () {
   );
 }
 
-/*
 run();
-*/
-
