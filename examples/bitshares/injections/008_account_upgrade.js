@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "account_upgrade", // operation name
     {
-      account_to_upgrade: "1.2.",
+      account_to_upgrade: "1.2.x",
       upgrade_to_lifetime_member: true,
       extensions: []
     }

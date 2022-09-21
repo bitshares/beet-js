@@ -8,7 +8,7 @@ let run = async function () {
     "custom_authority_delete", // operation name
     {
       account: "1.2.x",
-      authority_to_delete: "1.x.x",
+      authority_to_delete: "2.14.x",
       extensions: []
     }
   );

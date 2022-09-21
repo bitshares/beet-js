@@ -14,7 +14,7 @@ let run = async function () {
       operation_type: 1,
       auth: {
         weight_threshold: 1,
-        account_auths: [{"1.2.": 1}],
+        account_auths: [{"1.2.x": 1}],
         key_auths: [{"": 1}],
         address_auths: [{"": 1}]
       },

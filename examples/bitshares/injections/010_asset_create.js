@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_create", // operation name
     {
-      issuer: "1.2.",
+      issuer: "1.2.x",
       symbol: "",
       precision: 0,
       common_options: {
@@ -19,11 +19,11 @@ let run = async function () {
         core_exchange_rate: {
           base: {
             amount: 1,
-            asset_id: "1.3."
+            asset_id: "1.3.x"
         },
           quote: {
             amount: 1,
-            asset_id: "1.3."
+            asset_id: "1.3.x"
         }
         },
         whitelist_authorities: [],

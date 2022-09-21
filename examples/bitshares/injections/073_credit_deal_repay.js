@@ -8,7 +8,7 @@ let run = async function () {
     "credit_deal_repay", // operation name
     {
       account: "1.2.x",
-      deal_id: "1.x.x",
+      deal_id: "1.22.x",
       repay_amount: {
         amount: 1,
         asset_id: "1.3.x"

@@ -7,8 +7,8 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_fund_fee_pool", // operation name
     {
-      from_account: "1.2.",
-      asset_id: "1.2.",
+      from_account: "1.2.x",
+      asset_id: "1.2.x",
       amount: 1,
       extensions: []
     }

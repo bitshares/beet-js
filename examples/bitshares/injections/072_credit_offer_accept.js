@@ -8,7 +8,7 @@ let run = async function () {
     "credit_offer_accept", // operation name
     {
       borrower: "1.2.x",
-      offer_id: "1.x.x",
+      offer_id: "1.21.x",
       borrow_amount: {
         amount: 1,
         asset_id: "1.3.x"

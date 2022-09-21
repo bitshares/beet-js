@@ -7,9 +7,9 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "proposal_delete", // operation name
     {
-      fee_paying_account: "1.2.",
+      fee_paying_account: "1.2.x",
       using_owner_authority: true,
-      proposal: "1.x.",
+      proposal: "1.10.x",
       extensions: []
     }
   );

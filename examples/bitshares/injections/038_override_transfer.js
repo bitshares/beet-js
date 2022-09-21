@@ -7,12 +7,12 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "override_transfer", // operation name
     {
-      issuer: "1.2.",
-      from: "1.2.",
-      to: "1.2.",
+      issuer: "1.2.x",
+      from: "1.2.x",
+      to: "1.2.x",
       amount: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       memo: "",
       extensions: []

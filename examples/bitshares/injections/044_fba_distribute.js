@@ -8,7 +8,7 @@ let run = async function () {
     "fba_distribute", // operation name
     {
       account_id: "1.2.x",
-      fba_id: "1.x.x",
+      fba_id: "2.16.x",
       amount: 1
     }
   );

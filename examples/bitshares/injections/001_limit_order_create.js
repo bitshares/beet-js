@@ -12,14 +12,14 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "limit_order_create", // operation name
     {
-      seller: "1.2.",
+      seller: "1.2.x",
       amount_to_sell: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       min_to_receive: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       expiration: currentDate,
       fill_or_kill: true,

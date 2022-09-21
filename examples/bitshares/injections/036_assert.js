@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "assert", // operation name
     {
-      fee_paying_account: "1.2.",
+      fee_paying_account: "1.2.x",
       predicates: [
         [0, {"account_id":"1.2.x","name":"abc"}],
         [1, {"asset_id":"1.3.x","symbol":"ABC"}]

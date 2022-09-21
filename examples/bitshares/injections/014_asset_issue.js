@@ -7,13 +7,13 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_issue", // operation name
     {
-      issuer: "1.2.",
+      issuer: "1.2.x",
       asset_to_issue: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       memo: "", //optional
-      issue_to_account: "1.2.",
+      issue_to_account: "1.2.x",
       extensions: []
     }
   );

@@ -7,10 +7,10 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_reserve", // operation name
     {
-      payer: "1.2.",
+      payer: "1.2.x",
       amount_to_reserve: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       extensions: []
     }

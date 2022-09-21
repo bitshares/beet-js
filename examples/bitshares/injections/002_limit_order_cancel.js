@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "limit_order_cancel", // operation name
     {
-      fee_paying_account: "1.2.",
+      fee_paying_account: "1.2.x",
       order: "",
       extensions: []
     }

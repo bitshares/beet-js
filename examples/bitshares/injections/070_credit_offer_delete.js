@@ -8,7 +8,7 @@ let run = async function () {
     "credit_offer_delete", // operation name
     {
       owner_account: "1.2.x",
-      offer_id: "1.x.x",
+      offer_id: "1.21.x",
       extensions: []
     }
   );

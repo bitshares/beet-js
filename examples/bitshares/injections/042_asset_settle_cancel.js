@@ -7,11 +7,11 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_settle_cancel", // operation name
     {
-      settlement: "1.x.x",
-      account: "1.2.",
+      settlement: "1.4.x",
+      account: "1.2.x",
       amount: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       extensions: []
     }

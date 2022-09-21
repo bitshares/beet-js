@@ -8,7 +8,7 @@ let run = async function () {
     "samet_fund_delete", // operation name
     {
       owner_account: "1.2.x",
-      fund_id: "1.x.x",
+      fund_id: "1.20.x",
       extensions: []
     }
   );

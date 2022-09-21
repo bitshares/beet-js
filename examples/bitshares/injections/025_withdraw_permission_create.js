@@ -7,11 +7,11 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "withdraw_permission_create", // operation name
     {
-      withdraw_from_account: "1.2.",
-      authorized_account: "1.2.",
+      withdraw_from_account: "1.2.x",
+      authorized_account: "1.2.x",
       withdrawal_limit: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       withdrawal_period_sec: 60000,
       periods_until_expiration: 60000,

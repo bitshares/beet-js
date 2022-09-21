@@ -8,10 +8,10 @@ let run = async function () {
     "samet_fund_borrow", // operation name
     {
       borrower: "1.2.x",
-      fund_id: "1.x.x",
+      fund_id: "1.20.x",
       borrow_amount: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       extensions: []
     }

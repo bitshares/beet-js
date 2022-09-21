@@ -7,16 +7,16 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_global_settle", // operation name
     {
-      issuer: "1.2.",
-      asset_to_settle: "1.3.",
+      issuer: "1.2.x",
+      asset_to_settle: "1.3.x",
       settle_price: {
         base: {
           amount: 1,
-          asset_id: "1.3."
+          asset_id: "1.3.x"
         },
         quote: {
           amount: 1,
-          asset_id: "1.3."
+          asset_id: "1.3.x"
         }
     },
       extensions: []

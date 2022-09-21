@@ -8,14 +8,14 @@ let run = async function () {
     "fill_order", // operation name
     {
       order_id: "",
-      account_id: "1.2.",
+      account_id: "1.2.x",
       pays: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       receives: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       }
     }
   );

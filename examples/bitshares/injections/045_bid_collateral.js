@@ -10,11 +10,11 @@ let run = async function () {
       bidder: "1.2.x",
       additional_collateral: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       debt_covered: {
         amount: 1,
-        asset_id: "1.3."
+        asset_id: "1.3.x"
       },
       extensions: []
     }

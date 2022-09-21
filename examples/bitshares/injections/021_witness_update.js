@@ -7,8 +7,8 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "witness_update", // operation name
     {
-      witness: "1.x.x",
-      witness_account: "1.2.",
+      witness: "1.6.x",
+      witness_account: "1.2.x",
       new_url: "",
       new_signing_key: ""
     }

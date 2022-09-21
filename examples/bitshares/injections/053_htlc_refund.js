@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "htlc_refund", // operation name
     {
-      htlc_id: "1.x.x",
+      htlc_id: "1.16.x",
       to: "1.2.x"
     }
   );

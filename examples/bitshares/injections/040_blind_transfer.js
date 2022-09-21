@@ -11,7 +11,7 @@ let run = async function () {
         commitment: "",
         owner: {
           weight_threshold: 1,
-          account_auths: [{"1.2.": 1}],
+          account_auths: [{"1.2.x": 1}],
           key_auths: [{"": 1}],
           address_auths: [{"": 1}]
         }
@@ -21,7 +21,7 @@ let run = async function () {
         range_proof: "",
         owner: {
           weight_threshold: 1,
-          account_auths: [{"1.2.": 1}],
+          account_auths: [{"1.2.x": 1}],
           key_auths: [{"": 1}],
           address_auths: [{"": 1}]
         },

@@ -7,8 +7,8 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "asset_update", // operation name
     {
-      issuer: "1.2.",
-      asset_to_update: "1.3.",
+      issuer: "1.2.x",
+      asset_to_update: "1.3.x",
       new_issuer: null,
       new_options: {
         max_supply: 1,
@@ -19,11 +19,11 @@ let run = async function () {
         core_exchange_rate: {
           base: {
             amount: 1,
-            asset_id: "1.3."
+            asset_id: "1.3.x"
         },
           quote: {
             amount: 1,
-            asset_id: "1.3."
+            asset_id: "1.3.x"
         }
         },
         whitelist_authorities: [],

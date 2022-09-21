@@ -7,8 +7,8 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "account_whitelist", // operation name
     {
-      authorizing_account: "1.2.",
-      account_to_list: "1.2.",
+      authorizing_account: "1.2.x",
+      account_to_list: "1.2.x",
       new_listing: 0,
       extensions: []
     }
