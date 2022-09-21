@@ -6,7 +6,12 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "custom", // operation name
-    {}
+    {
+      payer: "1.2.",
+      required_auths: ["1.2."],
+      id: 1337,
+      data: "bytes..."
+    }
   );
 }
 

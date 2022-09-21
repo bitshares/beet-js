@@ -6,7 +6,12 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "htlc_extend", // operation name
-    {}
+    {
+      htlc_id: "1.x.x",
+      update_issuer: "1.2.x",
+      seconds_to_add: 600,
+      extensions: []
+    }
   );
 }
 

@@ -6,7 +6,29 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "transfer_to_blind", // operation name
-    {}
+    {
+      amount: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      from: "1.2.",
+      blinding_factor: "",
+      outputs: [{
+        commitment: "",
+        range_proof: "",
+        owner: {
+          weight_threshold: 1,
+          account_auths: [{"1.2.": 1}],
+          key_auths: [{"": 1}],
+          address_auths: [{"": 1}]
+        },
+        stealth_memo: { // optional
+          one_time_key: "",
+          to: "",
+          encrypted_memo: ""
+        }
+      }]
+    }
   );
 }
 

@@ -6,7 +6,18 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "bid_collateral", // operation name
-    {}
+    {
+      bidder: "1.2.x",
+      additional_collateral: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      debt_covered: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 

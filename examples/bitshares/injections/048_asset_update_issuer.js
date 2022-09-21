@@ -6,7 +6,12 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "asset_update_issuer", // operation name
-    {}
+    {
+      issuer: "1.2.x",
+      asset_to_update: "1.3.x",
+      new_issuer: "1.2.x",
+      extensions: []
+    }
   );
 }
 

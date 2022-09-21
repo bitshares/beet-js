@@ -6,7 +6,11 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "fba_distribute", // operation name
-    {}
+    {
+      account_id: "1.2.x",
+      fba_id: "1.x.x",
+      amount: 1
+    }
   );
 }
 

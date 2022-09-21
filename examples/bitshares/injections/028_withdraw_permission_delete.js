@@ -6,7 +6,11 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "withdraw_permission_delete", // operation name
-    {}
+    {
+      withdraw_from_account: "1.2.x",
+      authorized_account: "1.2.x",
+      withdrawal_permission: "1.x.x"
+    }
   );
 }
 

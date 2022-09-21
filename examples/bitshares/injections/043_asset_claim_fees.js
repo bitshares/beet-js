@@ -6,7 +6,14 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "asset_claim_fees", // operation name
-    {}
+    {
+      issuer: "1.2.",
+      amount_to_claim: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 

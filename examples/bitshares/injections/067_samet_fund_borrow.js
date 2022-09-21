@@ -6,7 +6,15 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "samet_fund_borrow", // operation name
-    {}
+    {
+      borrower: "1.2.x",
+      fund_id: "1.x.x",
+      borrow_amount: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 

@@ -6,7 +6,11 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "custom_authority_delete", // operation name
-    {}
+    {
+      account: "1.2.x",
+      authority_to_delete: "1.x.x",
+      extensions: []
+    }
   );
 }
 

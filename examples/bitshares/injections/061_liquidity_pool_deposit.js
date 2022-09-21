@@ -6,7 +6,19 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "liquidity_pool_deposit", // operation name
-    {}
+    {
+      account: "1.2.x",
+      pool: "1.x.x",
+      amount_a: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      amount_b: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 

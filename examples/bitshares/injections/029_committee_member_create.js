@@ -6,7 +6,10 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "committee_member_create", // operation name
-    {}
+    {
+      committee_member_account: "1.2.x",
+      url: ""
+    }
   );
 }
 

@@ -6,7 +6,16 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "ticket_update", // operation name
-    {}
+    {
+      ticket: "1.x.x",
+      account: "1.x.x",
+      target_type: 1,
+      amount_for_new_target: {
+        amount: 1,
+        asset_id: "1.3."
+      },
+      extensions: []
+    }
   );
 }
 

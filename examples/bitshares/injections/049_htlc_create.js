@@ -6,7 +6,15 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "htlc_create", // operation name
-    {}
+    {
+      from: "1.2.x",
+      to: "1.2.x",
+      amount: asset,
+      preimage_hash: "",
+      preimage_size: 0,
+      claim_period_seconds: 600,
+      extensions: []
+    }
   );
 }
 

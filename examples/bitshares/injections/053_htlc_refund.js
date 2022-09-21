@@ -6,7 +6,10 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "htlc_refund", // operation name
-    {}
+    {
+      htlc_id: "1.x.x",
+      to: "1.2.x"
+    }
   );
 }
 

@@ -6,7 +6,11 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "credit_offer_delete", // operation name
-    {}
+    {
+      owner_account: "1.2.x",
+      offer_id: "1.x.x",
+      extensions: []
+    }
   );
 }
 

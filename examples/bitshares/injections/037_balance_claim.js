@@ -6,7 +6,15 @@ let run = async function () {
     "BTS_TEST", // chain
     "wss://testnet.xbts.io/ws", // wss url
     "balance_claim", // operation name
-    {}
+    {
+      deposit_to_account: "1.2.",
+      balance_to_claim: "1.x.x",
+      balance_owner_key: "",
+      total_claimed: {
+        amount: 1,
+        asset_id: "1.3."
+      }
+    }
   );
 }
 

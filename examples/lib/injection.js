@@ -4,6 +4,7 @@ import { TransactionBuilder } from 'bitsharesjs';
 import { Apis } from "bitsharesjs-ws";
 
 /**
+ * Inject an operation into Beet for broadcast
  * @param {string} scriptName
  * @param {string} chain
  * @param {string} wsURL
