@@ -13,21 +13,17 @@ let run = async function () {
         amount: 1,
         asset_id: "1.3."
       },
-      policy: [ // TODO: DEBUG
-        {
-          "linear_vesting_policy_initializer": {
-            begin_timestamp: 1663765941,
-            vesting_cliff_seconds: 60000,
-            vesting_duration_seconds: 60000
-          }
-        },
-        {
-          "cdd_vesting_policy_initializer ": {
+      policy: [0, {
+        begin_timestamp: 1663765941,
+        vesting_cliff_seconds: 60000,
+        vesting_duration_seconds: 60000
+      }]
+      /*
+      policy: [1, {
             start_claim: 1663765941,
             vesting_seconds: 60000
-          }
-        }
-      ]
+      }]
+      */
     }
   );
 }

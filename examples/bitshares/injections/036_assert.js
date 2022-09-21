@@ -8,15 +8,11 @@ let run = async function () {
     "assert", // operation name
     {
       fee_paying_account: "1.2.",
-      predicates: [ // TODO: DEBUG
-        {
-          "account_name_eq_lit_predicate": {
-            account_id: "1.2.",
-            name: ""
-          }
-        }
+      predicates: [
+        [0, {"account_id":"1.2.x","name":"abc"}],
+        [1, {"asset_id":"1.3.x","symbol":"ABC"}]
       ],
-      required_auths: ["1.2."],
+      required_auths: ["1.2.x"],
       extensions: []
     }
   );

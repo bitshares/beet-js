@@ -12,6 +12,7 @@ let run = async function () {
         amount: 1,
         asset_id: "1.3."
       },
+      memo: "", //optional
       issue_to_account: "1.2.",
       extensions: []
     }

@@ -13,7 +13,14 @@ let run = async function () {
       daily_pay: 1,
       name: "",
       url: "",
-      initializer: "burn_worker_initializer" // TODO: DEBUG
+      initializer: [ 0,{} ]
+      /*
+      initializer: [
+        1,{
+          "pay_vesting_period_days": 1
+        }
+      ]
+      */
     }
   );
 }
