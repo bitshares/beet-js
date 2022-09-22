@@ -20,11 +20,11 @@ let run = async function () {
           base: {
             amount: 1,
             asset_id: "1.3.x"
-        },
+          },
           quote: {
             amount: 1,
             asset_id: "1.3.x"
-        }
+          }
         },
         whitelist_authorities: [],
         blacklist_authorities: [],

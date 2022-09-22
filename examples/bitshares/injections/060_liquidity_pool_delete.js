@@ -8,7 +8,7 @@ let run = async function () {
     "liquidity_pool_delete", // operation name
     {
       account: "1.2.x",
-      pool: "1.x.x",
+      pool: "1.19.x",
       extensions: []
     }
   );
