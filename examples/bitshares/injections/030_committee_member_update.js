@@ -7,7 +7,7 @@ let run = async function () {
     "wss://testnet.xbts.io/ws", // wss url
     "committee_member_update", // operation name
     {
-      committee_member: "1.2.x",
+      committee_member: "1.5.x",
       committee_member_account: "1.2.x",
       new_url: ""
     }
