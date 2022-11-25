@@ -1,4 +1,5 @@
-import { connect, link } from '../../../src/index.js';
+import { connect, link } from '../../src/index.js';
+
 import { readData, storeData } from './localDB.js'
 import { TransactionBuilder } from 'bitsharesjs';
 import { Apis } from "bitsharesjs-ws";
