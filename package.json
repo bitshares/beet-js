@@ -1,12 +1,12 @@
 {
   "name": "@beetapp/beet-js",
-  "version": "0.13.0",
+  "version": "0.20.0",
+  "type": "module",
   "apiversion": 3,
-  "description": "Beet-js is the client lib for Beet, a stand-alone key-manager and signing app for BitShares.",
-  "main": "index.js",
+  "description": "Beet-js is a client lib for Beet, a stand-alone key-manager and signing app.",
+  "main": "src/index.js",
   "scripts": {
-    "webpack": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "webpack": "webpack"
   },
   "keywords": [
     "blockchain",
@@ -14,19 +14,17 @@
     "keymanager",
     "bitshares"
   ],
-  "author": "clockworkgr",
+  "author": "Bitshares community",
   "license": "MIT",
   "devDependencies": {
-    "es6-promise": "^4.2.8",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9"
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "browser-detect": "^0.2.28",
-    "crypto-js": "^3.1.9-1",
-    "dexie": "^2.0.4",
-    "elliptic": "^6.5.1",
-    "isomorphic-fetch": "^2.2.1",
-    "otpauth": "^3.2.8"
+    "@noble/ed25519": "^1.6.1",
+    "crypto-js": "^4.1.1",
+    "otpauth": "^8.0.1",
+    "socket.io-client": "^4.5.1",
+    "uuid": "^8.3.2"
   }
 }
