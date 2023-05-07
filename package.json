@@ -17,7 +17,7 @@
   "author": "Bitshares community",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "^5.73.0",
+    "webpack": "^5.76.0",
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
